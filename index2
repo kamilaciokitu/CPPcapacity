@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITU-D CPP Workshop — From Data to Visualisation</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eeece8;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9a9994;
+    --border-light: rgba(0,0,0,0.10);
+    --border-mid: rgba(0,0,0,0.18);
+    --border-strong: rgba(0,0,0,0.28);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --amber-dark: #854F0B;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --red-dark: #A32D2D;
+    --blue: #378ADD;
+    --blue-light: #E6F1FB;
+    --blue-dark: #185FA5;
+    --gray-light: #F1EFE8;
+    --gray: #888780;
+    --gray-dark: #5F5E5A;
+    --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a27;
+      --bg-tertiary: #232320;
+      --text-primary: #f0ede8;
+      --text-secondary: #a8a49e;
+      --text-tertiary: #6b6760;
+      --border-light: rgba(255,255,255,0.08);
+      --border-mid: rgba(255,255,255,0.14);
+      --border-strong: rgba(255,255,255,0.22);
+      --green-light: #063d2b;
+      --amber-light: #3d2800;
+      --red-light: #3d1010;
+      --blue-light: #0d2540;
+      --gray-light: #2a2a27;
+    }
+  }
+  html, body { height: 100%; font-family: var(--font-sans); background: var(--bg-tertiary); color: var(--text-primary); }
+
+  /* ── LOCK SCREEN ── */
+  #lock-screen {
+    position: fixed; inset: 0; background: var(--bg-tertiary);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .lock-card {
+    background: var(--bg-primary); border: 0.5px solid var(--border-mid);
+    border-radius: var(--radius-xl); padding: 2.5rem 2rem; width: 340px; text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  }
+  .lock-icon { font-size: 36px; color: var(--green); margin-bottom: 1rem; display: block; }
+  .lock-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .lock-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .lock-input {
+    width: 100%; padding: 10px 14px; font-size: 14px; font-family: var(--font-sans);
+    background: var(--bg-secondary); color: var(--text-primary);
+    border: 0.5px solid var(--border-mid); border-radius: var(--radius-md);
+    outline: none; margin-bottom: 0.75rem; letter-spacing: 0.05em;
+  }
+  .lock-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(29,158,117,0.15); }
+  .lock-btn {
+    width: 100%; padding: 10px; font-size: 14px; font-weight: 500; font-family: var(--font-sans);
+    background: var(--green); color: #fff; border: none; border-radius: var(--radius-md);
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .lock-btn:hover { opacity: 0.88; }
+  .lock-error { font-size: 12px; color: var(--red); margin-top: 0.5rem; display: none; }
+  .lock-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 1rem; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; min-height: 100vh; }
+  .topbar {
+    background: var(--bg-primary); border-bottom: 0.5px solid var(--border-light);
+    padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .topbar-sub { font-size: 12px; color: var(--text-secondary); }
+  .topbar-right { margin-left: auto; }
+  .btn-logout { font-size: 12px; padding: 5px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: transparent; color: var(--text-secondary); cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; }
+  .btn-logout:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+  /* ── NAV TABS ── */
+  .nav { display: flex; gap: 0; border-bottom: 0.5px solid var(--border-light); margin-bottom: 1.5rem; overflow-x: auto; }
+  .nav-tab { padding: 0.6rem 1.1rem; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font-sans); transition: color 0.15s; }
+  .nav-tab.active { color: var(--text-primary); border-bottom-color: var(--green); font-weight: 500; }
+  .nav-tab:hover:not(.active) { color: var(--text-primary); }
+  .step-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); font-size: 10px; font-weight: 500; margin-right: 5px; }
+  .nav-tab.active .step-badge { background: var(--green); color: #fff; }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── COMPONENTS ── */
+  .section-label { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .card-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+  .metric { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 0.875rem 1rem; }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: var(--text-primary); }
+  .metric-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+  .tag { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+  .tag-green { background: var(--green-light); color: var(--green-dark); }
+  .tag-amber { background: var(--amber-light); color: var(--amber-dark); }
+  .tag-red { background: var(--red-light); color: var(--red-dark); }
+  .tag-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-gray { background: var(--gray-light); color: var(--gray-dark); }
+
+  .upload-zone { border: 1.5px dashed var(--border-mid); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: background 0.15s; }
+  .upload-zone:hover, .upload-zone.loaded { background: var(--bg-secondary); }
+  .upload-zone.loaded { border-color: #5DCAA5; }
+  .upload-zone i { font-size: 32px; color: var(--text-tertiary); margin-bottom: 0.5rem; display: block; }
+  .upload-zone i.loaded-icon { color: var(--green); }
+  .upload-zone p { font-size: 13px; color: var(--text-secondary); }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-align: left; padding: 6px 10px; border-bottom: 0.5px solid var(--border-light); }
+  .data-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--border-light); color: var(--text-primary); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg-secondary); }
+
+  .progress-bar-wrap { background: var(--bg-secondary); border-radius: 4px; height: 8px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; }
+
+  .insight-box { border-left: 3px solid; padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-radius: 0 4px 4px 0; }
+  .insight-green { border-color: var(--green); background: var(--green-light); }
+  .insight-amber { border-color: var(--amber); background: var(--amber-light); }
+  .insight-red { border-color: var(--red); background: var(--red-light); }
+  .insight-blue { border-color: var(--blue); background: var(--blue-light); }
+  .insight-box p { font-size: 13px; color: var(--text-primary); line-height: 1.6; }
+  .insight-box .ins-title { font-size: 11px; font-weight: 500; margin-bottom: 4px; }
+  .ins-green { color: var(--green-dark); }
+  .ins-amber { color: var(--amber-dark); }
+  .ins-red { color: var(--red-dark); }
+  .ins-blue { color: var(--blue-dark); }
+
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border-mid); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; font-family: var(--font-sans); }
+  .filter-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+  .filter-btn:hover:not(.active) { border-color: var(--border-strong); color: var(--text-primary); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .map-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .map-cell { aspect-ratio: 1; border-radius: 6px; position: relative; cursor: pointer; transition: opacity 0.15s; display: flex; align-items: flex-end; padding: 6px; }
+  .map-cell:hover { opacity: 0.82; }
+  .cell-label { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.92); line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
+  .step-card { display: flex; gap: 1rem; padding: 1rem; border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); margin-bottom: 0.75rem; cursor: pointer; transition: border-color 0.15s; }
+  .step-card:hover { border-color: var(--border-strong); }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--green-dark); flex-shrink: 0; }
+  .step-content p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; line-height: 1.5; }
+  .step-content strong { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+
+  .btn-primary { font-size: 13px; padding: 7px 16px; border-radius: var(--radius-md); background: var(--green); color: #fff; border: none; cursor: pointer; font-family: var(--font-sans); transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary { font-size: 13px; padding: 7px 16px; border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); border: 0.5px solid var(--border-mid); cursor: pointer; font-family: var(--font-sans); transition: background 0.15s; }
+  .btn-secondary:hover { background: var(--bg-tertiary); }
+  .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+
+  .quiz-option { display: flex; align-items: flex-start; gap: 10px; padding: 0.75rem 1rem; border: 0.5px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; margin-bottom: 0.5rem; transition: all 0.15s; }
+  .quiz-option:hover:not(.answered) { border-color: var(--green); background: var(--green-light); }
+  .quiz-option.correct { border-color: var(--green); background: var(--green-light); cursor: default; }
+  .quiz-option.wrong { border-color: var(--red); background: var(--red-light); cursor: default; }
+  .quiz-option.answered { cursor: default; }
+  .quiz-letter { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text-secondary); flex-shrink: 0; }
+
+  .priority-item { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0; border-bottom: 0.5px solid var(--border-light); }
+  .priority-item:last-child { border-bottom: none; }
+  .priority-rank { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .r-high { background: var(--red-light); color: var(--red-dark); }
+  .r-med { background: var(--amber-light); color: var(--amber-dark); }
+  .r-low { background: var(--green-light); color: var(--green-dark); }
+  .priority-info { flex: 1; }
+  .priority-info .p-name { font-size: 13px; font-weight: 500; }
+  .priority-info .p-detail { font-size: 12px; color: var(--text-secondary); }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
+  .slider-row label { font-size: 13px; color: var(--text-secondary); min-width: 160px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--green); }
+  .slider-row span { font-size: 13px; font-weight: 500; min-width: 36px; text-align: right; color: var(--text-primary); }
+
+  .intro-header { margin-bottom: 1.25rem; }
+  .intro-header .eyebrow { font-size: 11px; font-weight: 500; color: var(--green); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .intro-header h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .intro-header p { font-size: 13px; color: var(--text-secondary); }
+
+  .divider { border: none; border-top: 0.5px solid var(--border-light); margin: 1rem 0; }
+
+  @media (max-width: 600px) {
+    .card-4 { grid-template-columns: 1fr 1fr; }
+    .card-row { grid-template-columns: 1fr; }
+    .map-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOCK SCREEN
+══════════════════════════════════════ -->
+<div id="lock-screen" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+  <div class="lock-card">
+    <i class="ti ti-lock lock-icon" aria-hidden="true"></i>
+    <div class="lock-title" id="lock-title">Workshop access</div>
+    <div class="lock-sub">ITU-D Connectivity Planning Platform · Data to Visualisation</div>
+    <input
+      class="lock-input"
+      id="pw-input"
+      type="password"
+      placeholder="Enter session password"
+      autocomplete="current-password"
+      aria-label="Session password"
+    >
+    <button class="lock-btn" onclick="checkPassword()" id="unlock-btn">Enter workshop</button>
+    <div class="lock-error" id="lock-error" role="alert">Incorrect password. Please try again.</div>
+    <div class="lock-hint">Contact your session facilitator if you need access credentials.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <i class="ti ti-wifi" aria-hidden="true" style="font-size:18px; color:var(--green);"></i>
+    <div>
+      <div class="topbar-brand">ITU-D · Connectivity Planning Platform</div>
+      <div class="topbar-sub">Workshop — From Data to Visualisation</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-logout" onclick="logout()"><i class="ti ti-logout" aria-hidden="true"></i> Exit</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <nav class="nav" role="tablist" aria-label="Workshop modules">
+      <button class="nav-tab active" role="tab" aria-selected="true" onclick="showPanel('intro')"><span class="step-badge">1</span>Introduction</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('upload')"><span class="step-badge">2</span>Upload &amp; structure</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('explore')"><span class="step-badge">3</span>Explore data</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('map')"><span class="step-badge">4</span>Geospatial view</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('insights')"><span class="step-badge">5</span>Policy insights</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('priority')"><span class="step-badge">6</span>Prioritisation</button>
+      <button class="nav-tab" role="tab" aria-selected="false" onclick="showPanel('quiz')"><span class="step-badge">7</span>Check learning</button>
+    </nav>
+
+    <!-- ── PANEL 1: INTRO ── -->
+    <div class="panel active" id="panel-intro" role="tabpanel">
+      <div class="intro-header">
+        <div class="eyebrow">ITU-D · Connectivity Planning Platform</div>
+        <h1>From data to visualisation</h1>
+        <p>A hands-on workshop environment for policymakers, regulators, and national broadband planners</p>
+      </div>
+
+      <div class="card-row">
+        <div class="step-card" onclick="showPanel('upload')" role="button" tabindex="0">
+          <div class="step-num">1</div>
+          <div class="step-content"><strong>Upload &amp; structure data</strong><p>Learn how raw connectivity datasets are organised and validated before analysis</p></div>
+        </div>
+        <div class="step-card" onclick="showPanel('explore')" role="button" tabindex="0">
+          <div class="step-num">2</div>
+          <div class="step-content"><strong>Explore &amp; filter</strong><p>Interact with coverage indicators, technology types, and demographic overlays</p></div>
+        </div>
+        <div class="step-card" onclick="showPanel('map')" role="button" tabindex="0">
+          <div class="step-num">3</div>
+          <div class="step-content"><strong>Geospatial view</strong><p>Read and interpret district-level connectivity maps to identify coverage gaps</p></div>
+        </div>
+        <div class="step-card" onclick="showPanel('insights')" role="button" tabindex="0">
+          <div class="step-num">4</div>
+          <div class="step-content"><strong>Policy insights</strong><p>Translate visual patterns into actionable recommendations for broadband planning</p></div>
+        </div>
+        <div class="step-card" onclick="showPanel('priority')" role="button" tabindex="0">
+          <div class="step-num">5</div>
+          <div class="step-content"><strong>Prioritise interventions</strong><p>Apply weighting criteria to rank districts for Universal Service Fund allocation</p></div>
+        </div>
+        <div class="step-card" onclick="showPanel('quiz')" role="button" tabindex="0">
+          <div class="step-num">6</div>
+          <div class="step-content"><strong>Check your learning</strong><p>Consolidate understanding with scenario-based questions and instant feedback</p></div>
+        </div>
+      </div>
+
+      <div class="section-label">What is CPP?</div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:500;margin-bottom:0.5rem;">What is the ITU-D Connectivity Planning Platform?</div>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:0.75rem;">The ITU-D Connectivity Planning Platform (CPP) is a web-based geospatial tool developed by the ITU Telecommunication Development Bureau to help governments and regulators turn raw connectivity data into decision-ready visualisations. It supports evidence-based broadband planning by mapping coverage gaps, overlaying demographic and economic data, and helping policymakers identify where universal service interventions will have the greatest impact.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="tag tag-green"><i class="ti ti-database" aria-hidden="true"></i> Data ingestion</span>
+          <span class="tag tag-blue"><i class="ti ti-map" aria-hidden="true"></i> Geospatial mapping</span>
+          <span class="tag tag-amber"><i class="ti ti-chart-bar" aria-hidden="true"></i> Gap analysis</span>
+          <span class="tag tag-red"><i class="ti ti-target" aria-hidden="true"></i> Intervention targeting</span>
+        </div>
+      </div>
+
+      <div class="card-4">
+        <div class="metric"><div class="metric-label">Countries using ITU-D CPP</div><div class="metric-value">47</div><div class="metric-sub">across 5 ITU regions</div></div>
+        <div class="metric"><div class="metric-label">Average coverage gap identified</div><div class="metric-value">23%</div><div class="metric-sub">of population unserved</div></div>
+        <div class="metric"><div class="metric-label">USF allocation efficiency gain</div><div class="metric-value">38%</div><div class="metric-sub">vs. non-data-driven planning</div></div>
+        <div class="metric"><div class="metric-label">Policy cycle time reduction</div><div class="metric-value">2×</div><div class="metric-sub">faster with CPP dashboards</div></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('upload')">Begin the workshop <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+      </div>
+    </div>
+
+    <!-- ── PANEL 2: UPLOAD ── -->
+    <div class="panel" id="panel-upload" role="tabpanel">
+      <div class="section-label">Step 2 — Upload &amp; structure your dataset in CPP</div>
+
+      <div class="upload-zone" id="upload-zone" onclick="simulateUpload()" role="button" tabindex="0" aria-label="Upload connectivity dataset or load sample">
+        <i class="ti ti-upload" id="upload-icon" aria-hidden="true"></i>
+        <div style="font-size:15px;font-weight:500;margin-bottom:4px;" id="upload-title">Upload connectivity dataset</div>
+        <p id="upload-desc">Click to select a .csv or .xlsx file · or drag and drop here</p>
+        <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;" id="upload-hint">CPP accepts: operator coverage returns, national survey data, ITU-format district datasets</p>
+      </div>
+
+      <div style="margin:1rem 0;text-align:center;font-size:12px;color:var(--text-tertiary);">— or use the pre-loaded sample dataset —</div>
+      <div id="load-sample-btn" style="text-align:center;">
+        <button class="btn-primary" onclick="loadSample()"><i class="ti ti-database" aria-hidden="true"></i> Load sample dataset</button>
+      </div>
+
+      <div id="dataset-info" style="display:none;margin-top:1rem;">
+        <div class="card" style="border-color:#5DCAA5;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;">
+            <i class="ti ti-file-check" aria-hidden="true" style="font-size:20px;color:var(--green);"></i>
+            <div>
+              <div style="font-size:14px;font-weight:500;">sample_coverage_dataset.csv</div>
+              <div style="font-size:12px;color:var(--text-secondary);">18 districts · 9 variables · 2023 reporting period</div>
+            </div>
+            <span class="tag tag-green" style="margin-left:auto;">Validated</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0.75rem;">
+            <div class="metric"><div class="metric-label">Total rows</div><div class="metric-value" style="font-size:18px;">18</div></div>
+            <div class="metric"><div class="metric-label">Columns</div><div class="metric-value" style="font-size:18px;">9</div></div>
+            <div class="metric"><div class="metric-label">Missing values</div><div class="metric-value" style="font-size:18px;">2</div></div>
+          </div>
+          <div class="section-label">Column structure</div>
+          <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>district_name</td><td><span class="tag tag-blue">Text</span></td><td>Administrative district identifier</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>population</td><td><span class="tag tag-blue">Integer</span></td><td>Total resident population</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>coverage_4g_pct</td><td><span class="tag tag-amber">Decimal</span></td><td>% of population with 4G access</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>coverage_broadband_pct</td><td><span class="tag tag-amber">Decimal</span></td><td>% of population with fixed broadband</td><td><span class="tag tag-amber">⚠ 2 nulls</span></td></tr>
+              <tr><td>rurality_index</td><td><span class="tag tag-amber">Decimal</span></td><td>0–1 score (1 = fully rural)</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>income_quintile</td><td><span class="tag tag-blue">Integer</span></td><td>1 (lowest) to 5 (highest) income band</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>operator_count</td><td><span class="tag tag-blue">Integer</span></td><td>Number of active operators</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>last_updated</td><td><span class="tag tag-blue">Date</span></td><td>Most recent data submission date</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+              <tr><td>usf_eligible</td><td><span class="tag tag-blue">Boolean</span></td><td>Whether district qualifies for USF support</td><td><span class="tag tag-green">✓ Complete</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div class="insight-box insight-blue">
+          <div class="ins-title ins-blue"><i class="ti ti-info-circle" aria-hidden="true"></i> CPP data structuring principle</div>
+          <p>The ITU-D CPP requires datasets to link a geographic identifier (district, sub-region, or admin unit) to coverage metrics, demographic context, and a date stamp. This enables CPP to map, compare, and track change over time across reporting periods.</p>
+        </div>
+        <div class="insight-box insight-amber">
+          <div class="ins-title ins-amber"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Missing data alert</div>
+          <p>Two districts are missing broadband coverage values. CPP flags these automatically. Common strategies: use the district average, request resubmission from operators, or exclude from broadband-specific analyses while retaining rows for mobile coverage analysis.</p>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-primary" onclick="showPanel('explore')">Explore the data <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+          <button class="btn-secondary" onclick="showPanel('intro')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL 3: EXPLORE ── -->
+    <div class="panel" id="panel-explore" role="tabpanel">
+      <div class="section-label">Step 3 — Explore &amp; filter the data</div>
+
+      <div class="card-4" style="margin-bottom:1rem;">
+        <div class="metric"><div class="metric-label">National 4G coverage avg.</div><div class="metric-value">61%</div><div class="metric-sub">across 18 districts</div></div>
+        <div class="metric"><div class="metric-label">Fixed broadband avg.</div><div class="metric-value">34%</div><div class="metric-sub">16 districts with data</div></div>
+        <div class="metric"><div class="metric-label">Population unserved (4G)</div><div class="metric-value">2.1M</div><div class="metric-sub">39% of total population</div></div>
+        <div class="metric"><div class="metric-label">USF-eligible districts</div><div class="metric-value">11 / 18</div><div class="metric-sub">61% of all districts</div></div>
+      </div>
+
+      <div class="section-label">Filter by coverage category</div>
+      <div class="filter-row" id="coverage-filters">
+        <button class="filter-btn active" onclick="filterTable('all',this)">All districts</button>
+        <button class="filter-btn" onclick="filterTable('critical',this)">Critical (&lt;30% 4G)</button>
+        <button class="filter-btn" onclick="filterTable('moderate',this)">Moderate (30–70%)</button>
+        <button class="filter-btn" onclick="filterTable('good',this)">Well served (&gt;70%)</button>
+        <button class="filter-btn" onclick="filterTable('usf',this)">USF eligible only</button>
+      </div>
+
+      <div class="card" style="overflow-x:auto;">
+        <table class="data-table" id="district-table">
+          <thead><tr><th>District</th><th>Population</th><th>4G coverage</th><th>Fixed BB</th><th>Rurality</th><th>Income quintile</th><th>USF eligible</th><th>Status</th></tr></thead>
+          <tbody id="district-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-label" style="margin-top:1rem;">4G coverage — all districts (sorted low → high)</div>
+      <div class="card">
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Critical (&lt;30%)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>Moderate (30–70%)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#1D9E75;"></span>Well served (&gt;70%)</span>
+        </div>
+        <div id="bar-chart-area"></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('map')">View on map <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+        <button class="btn-secondary" onclick="showPanel('upload')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- ── PANEL 4: MAP ── -->
+    <div class="panel" id="panel-map" role="tabpanel">
+      <div class="section-label">Step 4 — Geospatial visualisation</div>
+
+      <div style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start;flex-wrap:wrap;">
+        <div>
+          <div class="section-label" style="margin-bottom:0.5rem;">Select indicator to map</div>
+          <div class="filter-row" id="map-filters">
+            <button class="filter-btn active" onclick="updateMap('4g',this)">4G coverage</button>
+            <button class="filter-btn" onclick="updateMap('broadband',this)">Fixed broadband</button>
+            <button class="filter-btn" onclick="updateMap('rurality',this)">Rurality index</button>
+            <button class="filter-btn" onclick="updateMap('income',this)">Income quintile</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:0.5rem;">Overlay</div>
+          <label style="font-size:13px;cursor:pointer;color:var(--text-secondary);">
+            <input type="checkbox" id="usf-overlay" onchange="toggleUSF()" style="margin-right:4px;accent-color:var(--blue);"> USF eligible districts
+          </label>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;">
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:13px;font-weight:500;margin-bottom:0.75rem;" id="map-title">4G mobile coverage by district</div>
+          <div class="legend" id="map-legend"></div>
+          <div class="map-grid" id="map-grid" aria-label="District connectivity map grid"></div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:0.5rem;">Click any district for details · Simulated grid layout (real maps use actual district boundaries)</div>
+        </div>
+
+        <div>
+          <div class="card" id="district-detail-card" style="min-height:200px;">
+            <div style="font-size:13px;font-weight:500;margin-bottom:8px;" id="detail-title">Select a district</div>
+            <div id="detail-content" style="font-size:13px;color:var(--text-secondary);">Click any district on the map to see detailed connectivity statistics.</div>
+          </div>
+          <div class="card">
+            <div class="section-label">How to read this map</div>
+            <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
+              <span style="color:#E24B4A;font-weight:500;">Red</span> districts have critical coverage gaps — prioritise for immediate intervention.<br><br>
+              <span style="color:#EF9F27;font-weight:500;">Amber</span> districts are partially served — consider targeted subsidies.<br><br>
+              <span style="color:#0F6E56;font-weight:500;">Green</span> districts are well served — monitor and maintain coverage.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row" style="margin-top:0.5rem;">
+        <button class="btn-primary" onclick="showPanel('insights')">See policy insights <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+        <button class="btn-secondary" onclick="showPanel('explore')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- ── PANEL 5: INSIGHTS ── -->
+    <div class="panel" id="panel-insights" role="tabpanel">
+      <div class="section-label">Step 5 — Policy insights from CPP visualisations</div>
+
+      <div class="insight-box insight-red">
+        <div class="ins-title ins-red"><i class="ti ti-alert-circle" aria-hidden="true"></i> Finding 1 — Critical coverage gap in rural districts</div>
+        <p>Six districts with a rurality index above 0.7 have 4G coverage below 30%. These districts collectively house 890,000 people with no meaningful mobile connectivity. Rural geography is the primary predictor of coverage gaps in this dataset.</p>
+      </div>
+      <div class="insight-box insight-amber">
+        <div class="ins-title ins-amber"><i class="ti ti-trending-up" aria-hidden="true"></i> Finding 2 — Income and coverage are correlated</div>
+        <p>Districts in income quintiles 1 and 2 (lowest) average 28% 4G coverage, compared to 79% in quintile 4 and 5 districts. This suggests market-led rollout naturally favours economically stronger areas, reinforcing the case for USF intervention in low-income districts.</p>
+      </div>
+      <div class="insight-box insight-blue">
+        <div class="ins-title ins-blue"><i class="ti ti-users" aria-hidden="true"></i> Finding 3 — Unserved population is concentrated</div>
+        <p>Just four districts account for 68% of all unserved population. Targeted intervention in these four districts would be the most cost-effective path to closing the national coverage gap, rather than spreading USF resources uniformly.</p>
+      </div>
+      <div class="insight-box insight-green">
+        <div class="ins-title ins-green"><i class="ti ti-check" aria-hidden="true"></i> Finding 4 — Fixed broadband has expansion opportunity</div>
+        <p>Seven districts have strong 4G coverage (&gt;70%) but fixed broadband below 20%. These represent next-phase investment opportunities where mobile infrastructure already exists — shared mast infrastructure could lower fixed deployment costs.</p>
+      </div>
+
+      <div class="section-label" style="margin-top:1.25rem;">From visualisation to policy action</div>
+      <div class="card" style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Visual pattern</th><th>Policy interpretation</th><th>Recommended action</th></tr></thead>
+          <tbody>
+            <tr><td>Red cluster in north region</td><td>Geography-driven market failure</td><td>USF subsidy + infrastructure sharing mandate</td></tr>
+            <tr><td>Low income, low coverage correlation</td><td>Market not serving poorest communities</td><td>Demand-side subsidies (device, data vouchers)</td></tr>
+            <tr><td>High 4G, low fixed broadband</td><td>Infrastructure present, last-mile gap</td><td>Fixed wireless access (FWA) incentives</td></tr>
+            <tr><td>Single-operator districts</td><td>No competitive pressure on quality</td><td>Spectrum refarming or virtual MVNOs</td></tr>
+            <tr><td>Outdated data in some districts</td><td>Data governance risk</td><td>Mandatory quarterly operator reporting</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('priority')">Prioritise interventions <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+        <button class="btn-secondary" onclick="showPanel('map')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- ── PANEL 6: PRIORITY ── -->
+    <div class="panel" id="panel-priority" role="tabpanel">
+      <div class="section-label">Step 6 — USF intervention prioritisation</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1rem;line-height:1.7;">Adjust the weights below to reflect your country's policy priorities. The ranking updates automatically — this mirrors CPP's built-in scoring model, which national broadband planners calibrate when generating intervention priority lists.</p>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="section-label">Prioritisation criteria weights</div>
+        <div class="slider-row"><label>Coverage gap severity</label><input type="range" min="0" max="100" value="40" id="w-coverage" oninput="updatePriority()"><span id="w-coverage-val">40%</span></div>
+        <div class="slider-row"><label>Population affected</label><input type="range" min="0" max="100" value="30" id="w-pop" oninput="updatePriority()"><span id="w-pop-val">30%</span></div>
+        <div class="slider-row"><label>Income vulnerability</label><input type="range" min="0" max="100" value="20" id="w-income" oninput="updatePriority()"><span id="w-income-val">20%</span></div>
+        <div class="slider-row"><label>Rurality factor</label><input type="range" min="0" max="100" value="10" id="w-rural" oninput="updatePriority()"><span id="w-rural-val">10%</span></div>
+        <div style="font-size:12px;color:var(--text-tertiary);margin-top:0.25rem;">Total weight: <span id="total-weight" style="font-weight:500;color:var(--text-primary);">100%</span></div>
+      </div>
+
+      <div class="card-row">
+        <div class="card">
+          <div class="section-label">Ranked district list</div>
+          <div id="priority-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-label">Allocation guidance</div>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:0.75rem;">Based on current weights, the top 5 districts should receive:</p>
+          <div class="metric" style="margin-bottom:8px;"><div class="metric-label">Recommended USF allocation</div><div class="metric-value" id="usf-alloc">62%</div><div class="metric-sub">of total available fund</div></div>
+          <div class="metric" style="margin-bottom:8px;"><div class="metric-label">Population reached (top 5)</div><div class="metric-value">1.4M</div><div class="metric-sub">people gaining connectivity</div></div>
+          <div class="insight-box insight-blue" style="margin-top:0.75rem;margin-bottom:0;">
+            <div class="ins-title ins-blue"><i class="ti ti-bulb" aria-hidden="true"></i> Planner's note</div>
+            <p>Shifting weight toward "income vulnerability" raises lower-income districts in priority — reflecting the pro-poor targeting approach recommended in ITU-D universal service guidelines and aligned with the GSMA Mobile for Development framework.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('quiz')">Test your knowledge <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+        <button class="btn-secondary" onclick="showPanel('insights')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- ── PANEL 7: QUIZ ── -->
+    <div class="panel" id="panel-quiz" role="tabpanel">
+      <div class="section-label">Step 7 — Check your learning</div>
+      <div id="quiz-container"></div>
+      <div class="action-row" style="margin-top:1rem;">
+        <button class="btn-secondary" onclick="resetQuiz()"><i class="ti ti-refresh" aria-hidden="true"></i> Restart quiz</button>
+        <button class="btn-secondary" onclick="showPanel('priority')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════
+   PASSWORD — change this string to set a new password
+   ITU-D Connectivity Planning Platform Workshop
+   ════════════════════════════════════════ */
+const SESSION_PASSWORD = 'cpp2024';
+
+/* ── Auth ── */
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  const err = document.getElementById('lock-error');
+  if (val === SESSION_PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem('cpp_auth', '1');
+    renderExplore('all');
+    renderMap();
+    renderPriority();
+    renderQuiz();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('cpp_auth');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('lock-error').style.display = 'none';
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+if (sessionStorage.getItem('cpp_auth') === '1') {
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  setTimeout(() => {
+    renderExplore('all'); renderMap(); renderPriority(); renderQuiz();
+  }, 50);
+}
+
+/* ── Data ── */
+const districts = [
+  { name:"Northern Highlands",  pop:245000, cov4g:12, bb:8,    rural:0.92, income:1, ops:1, usf:true },
+  { name:"Eastern Plains",      pop:312000, cov4g:18, bb:12,   rural:0.85, income:1, ops:1, usf:true },
+  { name:"Coastal North",       pop:198000, cov4g:72, bb:45,   rural:0.35, income:3, ops:2, usf:false },
+  { name:"Central Basin",       pop:520000, cov4g:88, bb:61,   rural:0.18, income:4, ops:3, usf:false },
+  { name:"Southern Lowlands",   pop:178000, cov4g:24, bb:null, rural:0.78, income:2, ops:1, usf:true },
+  { name:"River Delta",         pop:290000, cov4g:65, bb:38,   rural:0.42, income:3, ops:2, usf:false },
+  { name:"Mountain West",       pop:142000, cov4g:8,  bb:5,    rural:0.96, income:1, ops:1, usf:true },
+  { name:"Urban Capital",       pop:890000, cov4g:97, bb:82,   rural:0.05, income:5, ops:4, usf:false },
+  { name:"Suburban East",       pop:445000, cov4g:84, bb:67,   rural:0.22, income:4, ops:3, usf:false },
+  { name:"Interior Plateau",    pop:167000, cov4g:31, bb:14,   rural:0.71, income:2, ops:1, usf:true },
+  { name:"Lake Region",         pop:203000, cov4g:55, bb:29,   rural:0.55, income:3, ops:2, usf:true },
+  { name:"Southern Border",     pop:134000, cov4g:22, bb:null, rural:0.82, income:1, ops:1, usf:true },
+  { name:"Coastal South",       pop:267000, cov4g:76, bb:52,   rural:0.28, income:4, ops:3, usf:false },
+  { name:"Northern Valley",     pop:189000, cov4g:44, bb:21,   rural:0.63, income:2, ops:2, usf:true },
+  { name:"Western Savanna",     pop:221000, cov4g:28, bb:11,   rural:0.75, income:2, ops:1, usf:true },
+  { name:"Central East",        pop:358000, cov4g:69, bb:41,   rural:0.38, income:3, ops:2, usf:false },
+  { name:"Port District",       pop:412000, cov4g:91, bb:74,   rural:0.12, income:5, ops:3, usf:false },
+  { name:"Inland Marshes",      pop:156000, cov4g:16, bb:7,    rural:0.88, income:1, ops:1, usf:true }
+];
+
+function getCoverageColor(val, type) {
+  if (val === null) return '#B4B2A9';
+  if (type === '4g' || type === 'broadband') {
+    if (val < 30) return '#E24B4A'; if (val < 50) return '#EF9F27';
+    if (val < 70) return '#FAC775'; if (val < 85) return '#9FE1CB'; return '#0F6E56';
+  }
+  if (type === 'rurality') {
+    if (val > 0.8) return '#E24B4A'; if (val > 0.6) return '#EF9F27';
+    if (val > 0.4) return '#FAC775'; if (val > 0.2) return '#9FE1CB'; return '#0F6E56';
+  }
+  if (type === 'income') return ['#E24B4A','#EF9F27','#FAC775','#9FE1CB','#0F6E56'][val-1];
+  return '#B4B2A9';
+}
+
+/* ── Panel nav ── */
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  const idx = {intro:0,upload:1,explore:2,map:3,insights:4,priority:5,quiz:6}[id];
+  const tab = document.querySelectorAll('.nav-tab')[idx];
+  tab.classList.add('active'); tab.setAttribute('aria-selected','true');
+  if (id === 'explore') renderExplore('all');
+  if (id === 'map') renderMap();
+  if (id === 'priority') renderPriority();
+}
+
+/* ── Upload simulation ── */
+function simulateUpload() {
+  document.getElementById('upload-title').textContent = 'Processing file…';
+  document.getElementById('upload-desc').textContent = 'Validating columns and checking for missing values';
+  document.getElementById('upload-hint').textContent = '';
+  setTimeout(loadSample, 900);
+}
+
+function loadSample() {
+  document.getElementById('dataset-info').style.display = 'block';
+  document.getElementById('load-sample-btn').style.display = 'none';
+  const zone = document.getElementById('upload-zone');
+  zone.classList.add('loaded');
+  document.getElementById('upload-icon').classList.add('loaded-icon');
+  document.getElementById('upload-icon').classList.replace('ti-upload','ti-circle-check');
+  document.getElementById('upload-title').textContent = 'File loaded successfully';
+  document.getElementById('upload-desc').textContent = 'sample_coverage_dataset.csv · 18 records';
+  document.getElementById('upload-hint').textContent = '';
+}
+
+/* ── Explore / table ── */
+function filterTable(filter, btn) {
+  document.querySelectorAll('#coverage-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderExplore(filter);
+}
+
+function renderExplore(filter) {
+  let filtered = districts;
+  if (filter === 'critical') filtered = districts.filter(d => d.cov4g < 30);
+  else if (filter === 'moderate') filtered = districts.filter(d => d.cov4g >= 30 && d.cov4g <= 70);
+  else if (filter === 'good') filtered = districts.filter(d => d.cov4g > 70);
+  else if (filter === 'usf') filtered = districts.filter(d => d.usf);
+
+  const tbody = document.getElementById('district-tbody');
+  tbody.innerHTML = filtered.map(d => {
+    const band = d.cov4g < 30 ? 'critical' : d.cov4g <= 70 ? 'moderate' : 'good';
+    const tagCls = band === 'critical' ? 'tag-red' : band === 'moderate' ? 'tag-amber' : 'tag-green';
+    const tagLabel = band === 'critical' ? 'Critical' : band === 'moderate' ? 'Moderate' : 'Well served';
+    return `<tr>
+      <td style="font-weight:500;">${d.name}</td>
+      <td>${(d.pop/1000).toFixed(0)}k</td>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div class="progress-bar-wrap" style="width:70px;"><div class="progress-bar" style="width:${d.cov4g}%;background:${getCoverageColor(d.cov4g,'4g')};"></div></div>
+        <span style="font-size:12px;">${d.cov4g}%</span></div></td>
+      <td>${d.bb !== null ? d.bb + '%' : '<span class="tag tag-gray">N/A</span>'}</td>
+      <td>${d.rural.toFixed(2)}</td>
+      <td style="text-align:center;">${d.income}</td>
+      <td style="text-align:center;">${d.usf ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-gray">No</span>'}</td>
+      <td><span class="tag ${tagCls}">${tagLabel}</span></td>
+    </tr>`;
+  }).join('');
+
+  const barArea = document.getElementById('bar-chart-area');
+  const sorted = [...filtered].sort((a,b) => a.cov4g - b.cov4g);
+  barArea.innerHTML = sorted.map(d => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+      <div style="font-size:11px;min-width:130px;text-align:right;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</div>
+      <div style="flex:1;"><div class="progress-bar-wrap"><div class="progress-bar" style="width:${d.cov4g}%;background:${getCoverageColor(d.cov4g,'4g')};"></div></div></div>
+      <div style="font-size:11px;min-width:28px;font-weight:500;">${d.cov4g}%</div>
+    </div>`).join('');
+}
+
+/* ── Map ── */
+let currentMapType = '4g';
+let showUSF = false;
+
+function updateMap(type, btn) {
+  document.querySelectorAll('#map-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMapType = type;
+  renderMap();
+}
+
+function toggleUSF() {
+  showUSF = document.getElementById('usf-overlay').checked;
+  renderMap();
+}
+
+function renderMap() {
+  const titles = { '4g':'4G mobile coverage by district', broadband:'Fixed broadband coverage by district', rurality:'Rurality index by district (1 = fully rural)', income:'Income quintile by district (1 = lowest)' };
+  document.getElementById('map-title').textContent = titles[currentMapType];
+
+  const legends = {
+    '4g': '<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>&lt; 30%</span><span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>30–50%</span><span class="legend-item"><span class="legend-dot" style="background:#FAC775;"></span>50–70%</span><span class="legend-item"><span class="legend-dot" style="background:#9FE1CB;"></span>70–85%</span><span class="legend-item"><span class="legend-dot" style="background:#0F6E56;"></span>&gt; 85%</span>',
+    broadband: '<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>&lt; 30%</span><span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>30–50%</span><span class="legend-item"><span class="legend-dot" style="background:#9FE1CB;"></span>50–70%</span><span class="legend-item"><span class="legend-dot" style="background:#0F6E56;"></span>&gt; 70%</span><span class="legend-item"><span class="legend-dot" style="background:#B4B2A9;"></span>No data</span>',
+    rurality: '<span class="legend-item"><span class="legend-dot" style="background:#0F6E56;"></span>Urban</span><span class="legend-item"><span class="legend-dot" style="background:#9FE1CB;"></span>Peri-urban</span><span class="legend-item"><span class="legend-dot" style="background:#FAC775;"></span>Mixed</span><span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>Rural</span><span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Remote</span>',
+    income: '<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Q1 (lowest)</span><span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>Q2</span><span class="legend-item"><span class="legend-dot" style="background:#FAC775;"></span>Q3</span><span class="legend-item"><span class="legend-dot" style="background:#9FE1CB;"></span>Q4</span><span class="legend-item"><span class="legend-dot" style="background:#0F6E56;"></span>Q5 (highest)</span>'
+  };
+  document.getElementById('map-legend').innerHTML = legends[currentMapType];
+
+  const vals = { '4g': d => d.cov4g, broadband: d => d.bb, rurality: d => d.rural, income: d => d.income };
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = districts.map((d,i) => {
+    const raw = vals[currentMapType](d);
+    const colorVal = currentMapType === 'rurality' ? d.rural : currentMapType === 'income' ? d.income : raw;
+    const color = getCoverageColor(colorVal, currentMapType);
+    const usfBorder = showUSF && d.usf ? 'border:2.5px solid #185FA5;' : '';
+    const shortName = d.name.split(' ').slice(0,2).join(' ');
+    return `<div class="map-cell" style="background:${color};${usfBorder}" onclick="showDistrictDetail(${i})" role="button" tabindex="0" aria-label="${d.name}">
+      <span class="cell-label">${shortName}</span>
+    </div>`;
+  }).join('');
+}
+
+function showDistrictDetail(idx) {
+  const d = districts[idx];
+  document.getElementById('detail-title').textContent = d.name;
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div class="metric" style="padding:0.6rem 0.75rem;"><div class="metric-label">4G coverage</div><div class="metric-value" style="font-size:18px;color:${getCoverageColor(d.cov4g,'4g')};">${d.cov4g}%</div></div>
+      <div class="metric" style="padding:0.6rem 0.75rem;"><div class="metric-label">Fixed broadband</div><div class="metric-value" style="font-size:18px;">${d.bb !== null ? d.bb + '%' : '—'}</div></div>
+    </div>
+    <table style="width:100%;font-size:12px;">
+      <tr><td style="color:var(--text-secondary);padding:3px 0;">Population</td><td style="text-align:right;font-weight:500;">${(d.pop/1000).toFixed(0)}k</td></tr>
+      <tr><td style="color:var(--text-secondary);padding:3px 0;">Rurality index</td><td style="text-align:right;font-weight:500;">${d.rural.toFixed(2)}</td></tr>
+      <tr><td style="color:var(--text-secondary);padding:3px 0;">Income quintile</td><td style="text-align:right;font-weight:500;">Q${d.income}</td></tr>
+      <tr><td style="color:var(--text-secondary);padding:3px 0;">Active operators</td><td style="text-align:right;font-weight:500;">${d.ops}</td></tr>
+      <tr><td style="color:var(--text-secondary);padding:3px 0;">USF eligible</td><td style="text-align:right;">${d.usf ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-gray">No</span>'}</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-tertiary);">${d.usf ? 'Qualifies for Universal Service Fund support.' : 'Does not currently qualify for USF support.'}</div>`;
+}
+
+/* ── Priority ── */
+function updatePriority() {
+  const wc = +document.getElementById('w-coverage').value;
+  const wp = +document.getElementById('w-pop').value;
+  const wi = +document.getElementById('w-income').value;
+  const wr = +document.getElementById('w-rural').value;
+  document.getElementById('w-coverage-val').textContent = wc + '%';
+  document.getElementById('w-pop-val').textContent = wp + '%';
+  document.getElementById('w-income-val').textContent = wi + '%';
+  document.getElementById('w-rural-val').textContent = wr + '%';
+  document.getElementById('total-weight').textContent = (wc+wp+wi+wr) + '%';
+  renderPriority(wc, wp, wi, wr);
+}
+
+function renderPriority(wc, wp, wi, wr) {
+  if (!wc) { wc=40; wp=30; wi=20; wr=10; }
+  const maxPop = Math.max(...districts.map(d => d.pop));
+  const scored = districts.filter(d => d.usf).map(d => ({
+    ...d,
+    score: (wc * (100-d.cov4g)/100 + wp * d.pop/maxPop + wi * (6-d.income)/5 + wr * d.rural) / 100
+  })).sort((a,b) => b.score - a.score);
+
+  document.getElementById('priority-list').innerHTML = scored.slice(0,8).map((d,i) => {
+    const rc = i < 3 ? 'r-high' : i < 6 ? 'r-med' : 'r-low';
+    return `<div class="priority-item">
+      <div class="priority-rank ${rc}">${i+1}</div>
+      <div class="priority-info">
+        <div class="p-name">${d.name}</div>
+        <div class="p-detail">${d.cov4g}% 4G · ${(d.pop/1000).toFixed(0)}k people · Q${d.income} income</div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:var(--text-secondary);">${(d.score*100).toFixed(0)}pts</div>
+    </div>`;
+  }).join('');
+
+  const top5 = scored.slice(0,5).reduce((s,d) => s+d.score, 0);
+  const all = scored.reduce((s,d) => s+d.score, 0);
+  document.getElementById('usf-alloc').textContent = (all > 0 ? Math.round(top5/all*100) : 0) + '%';
+}
+
+/* ── Quiz ── */
+const quizData = [
+  { q:"A district has 4G coverage of 22% and a population of 300,000. What does this tell a broadband planner?",
+    options:["The district is performing well and doesn't need intervention","Approximately 234,000 people likely lack meaningful mobile connectivity — a critical coverage gap requiring prioritisation","The data is too limited to draw any conclusions","The district should be deprioritised in favour of urban areas"],
+    correct:1, explain:"22% coverage means roughly 78% of the population — about 234,000 people — are without 4G access. Combined with the population size, this signals a high-impact intervention opportunity." },
+  { q:"In a geospatial connectivity map, a cluster of red districts in the north-east corner all have income quintile 1 or 2. What is the most likely policy interpretation?",
+    options:["The operators need higher prices in those areas","Geographic and economic factors are combining to create a market failure — commercial operators have no incentive to serve these areas","The data collection is probably wrong","This is normal and expected — all countries have some red districts"],
+    correct:1, explain:"When low coverage correlates with low income and geographic isolation, it indicates classic market failure. Public intervention (USF, subsidies) is necessary where commercial operators cannot recover investment costs." },
+  { q:"A dataset has two null values in the 'fixed_broadband_pct' column. What is the best approach?",
+    options:["Delete those two rows entirely from all analyses","Replace with zero — missing data is the same as no coverage","Flag the missing values, use the district average for broadband-specific analyses, and retain the full rows for mobile coverage analysis","Assume the broadband coverage is 100% since the data wasn't reported"],
+    correct:2, explain:"Missing values should be handled thoughtfully. Deleting rows wastes valid data in other columns. Assuming zero or 100% introduces bias. The best approach retains rows for non-missing variables and uses context-appropriate imputation." },
+  { q:"Seven districts have high 4G coverage (>70%) but fixed broadband below 20%. What does this suggest for infrastructure policy?",
+    options:["These districts should be ignored — they have good mobile coverage","Fixed wireless access (FWA) could be a cost-efficient solution, leveraging existing mast infrastructure to deliver broadband","The broadband data must be wrong — high mobile coverage always means high broadband","These districts should receive the same USF intervention as rural low-coverage districts"],
+    correct:1, explain:"Existing mobile mast infrastructure reduces deployment costs for fixed wireless broadband. This pattern suggests a specific, lower-cost intervention pathway distinct from areas with no infrastructure at all." },
+  { q:"You are weighting a USF prioritisation model. Which combination of weights best reflects a 'pro-poor' targeting approach?",
+    options:["Coverage gap 70%, population 30%, income vulnerability 0%, rurality 0%","Coverage gap 20%, population 10%, income vulnerability 50%, rurality 20%","Coverage gap 25%, population 25%, income vulnerability 25%, rurality 25%","Coverage gap 10%, population 80%, income vulnerability 5%, rurality 5%"],
+    correct:1, explain:"A 'pro-poor' approach prioritises income vulnerability as the dominant criterion, ensuring USF resources reach the most economically disadvantaged communities rather than simply the largest unserved populations." }
+];
+
+let quizAnswers = {};
+function renderQuiz() {
+  const answered = Object.keys(quizAnswers).length;
+  const correct = Object.values(quizAnswers).filter(Boolean).length;
+  let html = '';
+  if (answered === quizData.length) {
+    html = `<div class="card" style="text-align:center;padding:1.5rem;margin-bottom:1rem;">
+      <div style="font-size:32px;font-weight:500;color:${correct>=4?'var(--green)':'var(--amber)'};margin-bottom:8px;">${correct} / ${quizData.length}</div>
+      <div style="font-size:14px;color:var(--text-secondary);">${correct>=4?'Excellent work — strong foundational understanding of CPP methodology.':'Good effort. Review the insights and map sections to strengthen your understanding.'}</div>
+    </div>`;
+  }
+  html += quizData.map((q,qi) => {
+    const isAnswered = quizAnswers[qi] !== undefined;
+    return `<div class="card" style="margin-bottom:1rem;">
+      <div style="font-size:13px;font-weight:500;margin-bottom:0.75rem;"><span style="color:var(--green);">Q${qi+1}.</span> ${q.q}</div>
+      ${q.options.map((opt,oi) => {
+        let cls = 'quiz-option' + (isAnswered ? ' answered' : '');
+        if (isAnswered && oi === q.correct) cls += ' correct';
+        else if (isAnswered && oi === quizAnswers[qi] && oi !== q.correct) cls += ' wrong';
+        return `<div class="${cls}" onclick="${isAnswered?'':(`answerQuiz(${qi},${oi})`)}">
+          <div class="quiz-letter">${String.fromCharCode(65+oi)}</div>
+          <div style="font-size:13px;">${opt}</div>
+        </div>`;
+      }).join('')}
+      ${isAnswered ? `<div class="insight-box ${quizAnswers[qi]===q.correct?'insight-green':'insight-amber'}" style="margin-top:0.5rem;margin-bottom:0;">
+        <div class="ins-title ${quizAnswers[qi]===q.correct?'ins-green':'ins-amber'}">${quizAnswers[qi]===q.correct?'✓ Correct':'✗ Not quite'}</div>
+        <p>${q.explain}</p></div>` : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('quiz-container').innerHTML = html;
+}
+
+function answerQuiz(qi, oi) { quizAnswers[qi] = (oi === quizData[qi].correct); renderQuiz(); }
+function resetQuiz() { quizAnswers = {}; renderQuiz(); }
+</script>
+</body>
+</html>
