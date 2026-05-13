@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITU-D CPP Workshop — From Data to Visualisation</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --itu-blue: #1B76BC;
+  --itu-blue-dark: #0D5A94;
+  --itu-blue-darker: #094475;
+  --itu-blue-light: #E8F3FB;
+  --itu-blue-mid: #B8D9F0;
+  --itu-cyan: #29ABE2;
+  --itu-cyan-light: #E0F5FC;
+  --itu-sidebar: #1660A0;
+  --success: #3AB795;
+  --success-light: #E8F8F4;
+  --warn: #F5A623;
+  --warn-light: #FEF5E7;
+  --danger: #E24B4A;
+  --danger-light: #FDEDED;
+  --bg: #F0F4F8;
+  --bg-card: #FFFFFF;
+  --text: #1A2B3C;
+  --text-mid: #4A6174;
+  --text-light: #7A94A8;
+  --border: rgba(27,118,188,0.15);
+  --border-mid: rgba(27,118,188,0.28);
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --shadow-sm: 0 1px 4px rgba(27,118,188,0.08);
+  --shadow-md: 0 4px 16px rgba(27,118,188,0.12);
+}
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); }
+
+#lock-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(160deg, #094475 0%, #1B76BC 55%, #29ABE2 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.lock-card { background: #fff; border-radius: var(--radius-xl); padding: 2.5rem 2rem; width: 360px; text-align: center; box-shadow: 0 16px 48px rgba(9,68,117,0.3); }
+.lock-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.5rem; }
+.lock-logo-box { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg,#1B76BC,#29ABE2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; }
+.lock-logo-text .t1 { font-size: 13px; font-weight: 700; color: var(--itu-blue-dark); letter-spacing: 0.04em; text-align:left; }
+.lock-logo-text .t2 { font-size: 11px; color: var(--text-light); text-align:left; }
+.lock-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.lock-sub { font-size: 13px; color: var(--text-mid); margin-bottom: 1.5rem; line-height: 1.5; }
+.lock-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+.lock-input { width: 100%; padding: 10px 14px; font-size: 14px; font-family: var(--font); background: var(--bg); color: var(--text); border: 1.5px solid var(--border-mid); border-radius: var(--radius-md); outline: none; margin-bottom: 0.75rem; letter-spacing: 0.04em; transition: border-color 0.15s, box-shadow 0.15s; }
+.lock-input:focus { border-color: var(--itu-blue); box-shadow: 0 0 0 3px rgba(27,118,188,0.15); }
+.lock-btn { width: 100%; padding: 11px; font-size: 14px; font-weight: 600; font-family: var(--font); background: linear-gradient(135deg,var(--itu-blue),var(--itu-cyan)); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; transition: opacity 0.15s; }
+.lock-btn:hover { opacity: 0.9; }
+.lock-error { font-size: 12px; color: var(--danger); margin-top: 0.5rem; display: none; }
+.lock-hint { font-size: 11px; color: var(--text-light); margin-top: 1rem; line-height: 1.5; }
+
+#app { display: none; min-height: 100vh; }
+.topbar { background: linear-gradient(135deg,#094475 0%,#1B76BC 60%,#29ABE2 100%); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(9,68,117,0.25); }
+.topbar-logo { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.topbar-brand { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: 0.02em; }
+.topbar-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+.topbar-right { margin-left: auto; }
+.btn-logout { font-size: 12px; padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+.btn-logout:hover { background: rgba(255,255,255,0.22); }
+
+.main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+.workflow-banner { background: linear-gradient(135deg,#0D5A94,#1B76BC); border-radius: var(--radius-lg); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0; margin-bottom: 1.5rem; overflow-x: auto; }
+.wf-box { background: rgba(255,255,255,0.18); color: #fff; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; letter-spacing: 0.03em; white-space: nowrap; cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+.wf-box:hover, .wf-box.active { background: rgba(255,255,255,0.35); }
+.wf-arrow { color: rgba(255,255,255,0.5); font-size: 18px; margin: 0 6px; flex-shrink: 0; }
+
+.nav { display: flex; gap: 0; border-bottom: 2px solid var(--border-mid); margin-bottom: 1.5rem; overflow-x: auto; }
+.nav-tab { padding: 0.6rem 1rem; font-size: 13px; color: var(--text-mid); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font); transition: color 0.15s; font-weight: 500; }
+.nav-tab.active { color: var(--itu-blue); border-bottom-color: var(--itu-blue); }
+.nav-tab:hover:not(.active) { color: var(--itu-blue-dark); }
+.step-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--itu-blue-light); color: var(--itu-blue-dark); font-size: 10px; font-weight: 700; margin-right: 5px; }
+.nav-tab.active .step-badge { background: var(--itu-blue); color: #fff; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.section-label { font-size: 10px; font-weight: 700; color: var(--itu-blue); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow-sm); }
+.card-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.card-grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.75rem; margin-bottom: 1rem; }
+.metric { background: var(--itu-blue-light); border: 1px solid var(--itu-blue-mid); border-radius: var(--radius-md); padding: 0.875rem 1rem; }
+.metric-label { font-size: 11px; color: var(--itu-blue-dark); margin-bottom: 4px; font-weight: 500; }
+.metric-value { font-size: 22px; font-weight: 700; color: var(--itu-blue); }
+.metric-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+.tag { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.tag-blue { background: var(--itu-blue-light); color: var(--itu-blue-dark); }
+.tag-cyan { background: var(--itu-cyan-light); color: #0A7CA8; }
+.tag-success { background: var(--success-light); color: #1E7A5E; }
+.tag-warn { background: var(--warn-light); color: #9A6200; }
+.tag-danger { background: var(--danger-light); color: #A32D2D; }
+.tag-gray { background: #EEF2F5; color: #4A6174; }
+
+.insight-box { border-left: 3px solid; padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.insight-blue { border-color: var(--itu-blue); background: var(--itu-blue-light); }
+.insight-cyan { border-color: var(--itu-cyan); background: var(--itu-cyan-light); }
+.insight-success { border-color: var(--success); background: var(--success-light); }
+.insight-warn { border-color: var(--warn); background: var(--warn-light); }
+.insight-danger { border-color: var(--danger); background: var(--danger-light); }
+.insight-box p { font-size: 13px; color: var(--text); line-height: 1.65; }
+.insight-box .ins-title { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+.ins-blue { color: var(--itu-blue-dark); } .ins-cyan { color: #0A7CA8; } .ins-success { color: #1E7A5E; } .ins-warn { color: #9A6200; } .ins-danger { color: #A32D2D; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { font-size: 11px; font-weight: 700; color: var(--itu-blue); text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border-mid); background: var(--itu-blue-light); }
+.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--itu-blue-light); }
+
+.progress-wrap { background: #DDE6EF; border-radius: 4px; height: 7px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 4px; }
+
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.filter-btn { font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border-mid); background: var(--bg-card); color: var(--text-mid); cursor: pointer; font-family: var(--font); transition: all 0.15s; font-weight: 500; }
+.filter-btn.active { background: var(--itu-blue); color: #fff; border-color: var(--itu-blue); }
+.filter-btn:hover:not(.active) { border-color: var(--itu-blue); color: var(--itu-blue); }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-mid); font-weight: 500; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+.map-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.map-cell { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: flex-end; padding: 6px; transition: transform 0.12s, opacity 0.12s; }
+.map-cell:hover { opacity: 0.82; transform: scale(1.04); }
+.cell-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.95); line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,0.55); }
+
+.step-card { display: flex; gap: 1rem; padding: 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; background: var(--bg-card); margin-bottom: 0; }
+.step-card:hover { border-color: var(--itu-blue); box-shadow: var(--shadow-md); }
+.step-num { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,var(--itu-blue),var(--itu-cyan)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.step-content p { font-size: 13px; color: var(--text-mid); margin-top: 3px; line-height: 1.5; }
+.step-content strong { font-size: 14px; font-weight: 600; color: var(--text); }
+
+.btn-primary { font-size: 13px; padding: 8px 18px; border-radius: var(--radius-md); background: linear-gradient(135deg,var(--itu-blue),var(--itu-cyan)); color: #fff; border: none; cursor: pointer; font-family: var(--font); font-weight: 600; transition: opacity 0.15s; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-secondary { font-size: 13px; padding: 8px 18px; border-radius: var(--radius-md); background: var(--bg-card); color: var(--itu-blue); border: 1.5px solid var(--itu-blue); cursor: pointer; font-family: var(--font); font-weight: 600; transition: all 0.15s; }
+.btn-secondary:hover { background: var(--itu-blue-light); }
+.action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+
+.quiz-option { display: flex; align-items: flex-start; gap: 10px; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); cursor: pointer; margin-bottom: 0.5rem; transition: all 0.15s; background: var(--bg-card); }
+.quiz-option:hover:not(.answered) { border-color: var(--itu-blue); background: var(--itu-blue-light); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-light); cursor: default; }
+.quiz-option.wrong { border-color: var(--danger); background: var(--danger-light); cursor: default; }
+.quiz-option.answered { cursor: default; }
+.quiz-letter { width: 26px; height: 26px; border-radius: 50%; background: var(--itu-blue-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--itu-blue); flex-shrink: 0; }
+
+.priority-item { display: flex; align-items: center; gap: 10px; padding: 0.65rem 0; border-bottom: 1px solid var(--border); }
+.priority-item:last-child { border-bottom: none; }
+.priority-rank { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.r-high { background: var(--danger-light); color: #A32D2D; }
+.r-med { background: var(--warn-light); color: #9A6200; }
+.r-low { background: var(--success-light); color: #1E7A5E; }
+.priority-info { flex: 1; }
+.priority-info .p-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.priority-info .p-detail { font-size: 12px; color: var(--text-mid); }
+
+.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
+.slider-row label { font-size: 13px; color: var(--text-mid); min-width: 170px; font-weight: 500; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--itu-blue); }
+.slider-row span { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; color: var(--itu-blue); }
+
+.upload-zone { border: 2px dashed var(--itu-blue-mid); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--bg-card); }
+.upload-zone:hover, .upload-zone.loaded { background: var(--itu-blue-light); border-color: var(--itu-blue); }
+.upload-zone i { font-size: 32px; color: var(--itu-blue); margin-bottom: 0.5rem; display: block; }
+
+.quote-block { text-align: center; padding: 1.5rem 2rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1rem; }
+.quote-mark { font-size: 36px; color: var(--itu-cyan); font-weight: 700; line-height: 1; margin-bottom: 0.5rem; display: block; }
+.quote-text { font-size: 17px; color: var(--text); line-height: 1.6; }
+
+.role-card { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-card); }
+.role-title { font-size: 13px; font-weight: 700; color: var(--itu-blue); margin-bottom: 3px; }
+.role-desc { font-size: 12px; color: var(--text-mid); }
+
+@media(max-width:600px){ .card-grid4{grid-template-columns:1fr 1fr;} .card-grid2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<div id="lock-screen" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+  <div class="lock-card">
+    <div class="lock-logo">
+      <div class="lock-logo-box">ITU</div>
+      <div class="lock-logo-text">
+        <div class="t1">ITUCPP</div>
+        <div class="t2">Connectivity Planning Platform</div>
+      </div>
+    </div>
+    <div class="lock-title" id="lock-title">Workshop access</div>
+    <div class="lock-sub">From Data to Visualisation<br>CPP Navigator · May 2026</div>
+    <hr class="lock-divider">
+    <input class="lock-input" id="pw-input" type="password" placeholder="Enter session password" autocomplete="current-password" aria-label="Session password">
+    <button class="lock-btn" onclick="checkPassword()">Sign In to Workshop</button>
+    <div class="lock-error" id="lock-error" role="alert">Incorrect password. Please try again.</div>
+    <div class="lock-hint">Contact your session facilitator if you need access credentials.<br>ITU support: cppsupport@itu.int</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">ITU</div>
+    <div>
+      <div class="topbar-brand">Connectivity Planning Platform</div>
+      <div class="topbar-sub">Workshop — From Data to Visualisation · May 2026</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-logout" onclick="logout()"><i class="ti ti-logout"></i> Exit</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="workflow-banner" role="navigation" aria-label="CPP end-to-end planning workflow">
+      <div class="wf-box" onclick="showPanel('datasets')">Datasets</div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-box" onclick="showPanel('scenarios')">Scenarios</div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-box" onclick="showPanel('models')">Models</div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-box" onclick="showPanel('results')">Results</div>
+    </div>
+
+    <nav class="nav" role="tablist">
+      <button class="nav-tab active" onclick="showPanel('intro')"><span class="step-badge">1</span>Introduction</button>
+      <button class="nav-tab" onclick="showPanel('datasets')"><span class="step-badge">2</span>Datasets</button>
+      <button class="nav-tab" onclick="showPanel('scenarios')"><span class="step-badge">3</span>Scenarios</button>
+      <button class="nav-tab" onclick="showPanel('models')"><span class="step-badge">4</span>Models</button>
+      <button class="nav-tab" onclick="showPanel('results')"><span class="step-badge">5</span>Results &amp; Map</button>
+      <button class="nav-tab" onclick="showPanel('policy')"><span class="step-badge">6</span>Planning &amp; Policy</button>
+      <button class="nav-tab" onclick="showPanel('quiz')"><span class="step-badge">7</span>Check Learning</button>
+    </nav>
+
+    <!-- INTRO -->
+    <div class="panel active" id="panel-intro">
+      <div style="margin-bottom:1.25rem;">
+        <div class="section-label">ITU-D · Connectivity Planning Platform</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">CPP Navigator Workshop</div>
+        <div style="font-size:14px;color:var(--text-mid);line-height:1.6;">A hands-on session for policymakers, regulators, national broadband planners, universal service fund managers, and data analysts — learning how to use CPP from datasets to results.</div>
+      </div>
+
+      <div class="quote-block">
+        <span class="quote-mark">"</span>
+        <div class="quote-text">Every analysis in the Connectivity Planning Platform begins with a project.</div>
+      </div>
+
+      <div class="section-label">CPP End-to-End Planning Workflow</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="display:flex;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;padding:1rem;background:#1B76BC;color:#fff;">
+            <div style="font-size:10px;font-weight:700;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Step 1</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Datasets</div>
+            <div style="font-size:12px;opacity:0.85;line-height:1.5;">CPP combines user-provided and system-provided datasets to create the foundation for accurate, real-world connectivity analysis.</div>
+          </div>
+          <div style="flex:1;min-width:160px;padding:1rem;background:#1660A0;color:#fff;">
+            <div style="font-size:10px;font-weight:700;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Step 2</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Scenarios</div>
+            <div style="font-size:12px;opacity:0.85;line-height:1.5;">Scenarios define planning objectives and constraints — demand, budget, and timelines — to guide the system toward optimal results.</div>
+          </div>
+          <div style="flex:1;min-width:160px;padding:1rem;background:#0D5A94;color:#fff;">
+            <div style="font-size:10px;font-weight:700;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Step 3</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Models</div>
+            <div style="font-size:12px;opacity:0.85;line-height:1.5;">Models apply technical and cost parameters to simulate different technology options and generate feasible connectivity solutions.</div>
+          </div>
+          <div style="flex:1;min-width:160px;padding:1rem;background:#094475;color:#fff;">
+            <div style="font-size:10px;font-weight:700;opacity:0.75;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Step 4</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Results</div>
+            <div style="font-size:12px;opacity:0.85;line-height:1.5;">The output is where insights become actionable — view maps, download data, and inform national broadband strategies.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">What you will learn in this session</div>
+      <div class="card-grid2">
+        <div class="step-card" onclick="showPanel('datasets')"><div class="step-num">1</div><div class="step-content"><strong>Creating a New Dataset</strong><p>Upload and validate telecommunication infrastructure, points of interest, and coverage data using CPP templates</p></div></div>
+        <div class="step-card" onclick="showPanel('scenarios')"><div class="step-num">2</div><div class="step-content"><strong>Setting up Scenarios</strong><p>Define planning objectives — Maximize NPV or Minimize Total Cost of Ownership — with budget and demand parameters</p></div></div>
+        <div class="step-card" onclick="showPanel('models')"><div class="step-num">3</div><div class="step-content"><strong>Selecting Models</strong><p>Choose from Point-to-Point Radio, Cellular, Satellite, and Fibre Optic to simulate technology options</p></div></div>
+        <div class="step-card" onclick="showPanel('results')"><div class="step-num">4</div><div class="step-content"><strong>Exploring Results in the Map</strong><p>Interpret interactive maps showing towers, fibre routes, infrastructure gaps, and technology recommendations</p></div></div>
+        <div class="step-card" onclick="showPanel('policy')"><div class="step-num">5</div><div class="step-content"><strong>Planning &amp; Policy Use Cases</strong><p>Translate CPP outputs into national broadband strategies, USF allocation decisions, and investment plans</p></div></div>
+        <div class="step-card" onclick="showPanel('quiz')"><div class="step-num">6</div><div class="step-content"><strong>Check Your Learning</strong><p>Scenario-based questions drawn from real CPP workflows and the Navigator guide</p></div></div>
+      </div>
+
+      <div class="section-label">User roles in CPP</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+        <div class="role-card"><div class="role-title"><i class="ti ti-eye"></i> Viewer</div><div class="role-desc">Can view existing projects and results</div></div>
+        <div class="role-card"><div class="role-title"><i class="ti ti-edit"></i> Analyst</div><div class="role-desc">Can create and edit projects, scenarios, and datasets</div></div>
+        <div class="role-card" style="grid-column:1/-1;"><div class="role-title"><i class="ti ti-settings"></i> Administrator</div><div class="role-desc">Can manage users, data, and the country workspace. To change your role, contact your country administrator or cppsupport@itu.int</div></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('datasets')">Start: Creating a New Dataset <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- DATASETS -->
+    <div class="panel" id="panel-datasets">
+      <div class="section-label">Step 2 — Creating a New Dataset</div>
+      <div class="quote-block">
+        <span class="quote-mark">"</span>
+        <div class="quote-text">Ensuring your data is accurate, complete, and relevant is crucial because the platform's analysis, modelling, and final recommendations all depend on the datasets you upload.<br><br><strong>Data templates are provided.</strong></div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;color:var(--itu-blue);margin-bottom:0.75rem;"><i class="ti ti-upload"></i> Start a New Dataset</div>
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:0.75rem;line-height:1.6;">In CPP go to <strong>Datasets</strong> in the left menu → click the <strong>+</strong> button → fill in the form.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+          <div class="metric"><div class="metric-label">Field 1</div><div style="font-size:14px;font-weight:600;color:var(--text);">Dataset Name</div><div class="metric-sub">e.g. "Benin – Cell Towers"</div></div>
+          <div class="metric"><div class="metric-label">Field 2</div><div style="font-size:14px;font-weight:600;color:var(--text);">Country</div><div class="metric-sub">Select from ITU member states list</div></div>
+          <div class="metric"><div class="metric-label">Field 3</div><div style="font-size:14px;font-weight:600;color:var(--text);">Dataset Type</div><div class="metric-sub">Select type → download template</div></div>
+        </div>
+        <div class="insight-box insight-blue" style="margin-bottom:0;">
+          <div class="ins-title ins-blue"><i class="ti ti-info-circle"></i> Then: Select file(s) → Click <strong>Validate and Create</strong></div>
+          <p>CPP validates the file against the template schema before creating the dataset. Fix any errors flagged before proceeding to the next step.</p>
+        </div>
+      </div>
+
+      <div class="section-label">All Datasets — what CPP uses</div>
+      <div class="card-grid2" style="margin-bottom:1rem;">
+        <div class="card" style="margin-bottom:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--itu-blue);margin-bottom:0.75rem;"><i class="ti ti-upload"></i> You upload</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;border-bottom:1px solid var(--border);"><i class="ti ti-tower-broadcast" style="color:var(--itu-blue);font-size:16px;"></i><div><div style="font-size:13px;font-weight:600;">Telecommunication Infrastructure</div><div style="font-size:12px;color:var(--text-mid);">Cell towers, transmission nodes, fibre nodes</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;"><i class="ti ti-map-pin" style="color:var(--itu-blue);font-size:16px;"></i><div><div style="font-size:13px;font-weight:600;">Points of Interest (POIs)</div><div style="font-size:12px;color:var(--text-mid);">Schools, hospitals, clinics, government offices</div></div></div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--itu-cyan);margin-bottom:0.75rem;"><i class="ti ti-database"></i> CPP provides</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;border-bottom:1px solid var(--border);"><i class="ti ti-mountain" style="color:var(--itu-cyan);font-size:16px;"></i><div><div style="font-size:13px;font-weight:600;">Elevation Data</div><div style="font-size:12px;color:var(--text-mid);">Terrain for line-of-sight calculations</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;border-bottom:1px solid var(--border);"><i class="ti ti-road" style="color:var(--itu-cyan);font-size:16px;"></i><div><div style="font-size:13px;font-weight:600;">Road Infrastructure</div><div style="font-size:12px;color:var(--text-mid);">For fibre routing and access cost</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;"><i class="ti ti-users" style="color:var(--itu-cyan);font-size:16px;"></i><div><div style="font-size:13px;font-weight:600;">Population Data</div><div style="font-size:12px;color:var(--text-mid);">Essential for coverage demand modelling</div></div></div>
+        </div>
+      </div>
+
+      <div class="section-label">Interactive: Explore a sample dataset</div>
+      <div class="upload-zone" id="upload-zone" onclick="simulateUpload()" role="button" tabindex="0">
+        <i class="ti ti-file-spreadsheet" id="upload-icon"></i>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;" id="upload-title">Load sample CPP dataset</div>
+        <p id="upload-desc" style="font-size:13px;color:var(--text-mid);">Click to load a sample telecommunications dataset formatted to CPP specifications</p>
+      </div>
+
+      <div id="dataset-detail" style="display:none;margin-top:1rem;">
+        <div class="card" style="border-color:var(--itu-blue);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;">
+            <i class="ti ti-circle-check" style="font-size:20px;color:var(--success);"></i>
+            <div><div style="font-size:14px;font-weight:700;">Benin_CellTowers_2024.csv</div><div style="font-size:12px;color:var(--text-mid);">Type: cellsite · Country: Benin (Republic of) · Status: <span class="tag tag-success">success</span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0.75rem;">
+            <div class="metric"><div class="metric-label">Total records</div><div class="metric-value" style="font-size:18px;">18</div></div>
+            <div class="metric"><div class="metric-label">Fields validated</div><div class="metric-value" style="font-size:18px;">9</div></div>
+            <div class="metric"><div class="metric-label">Missing values</div><div class="metric-value" style="font-size:18px;color:var(--warn);">2</div></div>
+          </div>
+          <div class="section-label">Dataset columns</div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Column</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>site_id</td><td><span class="tag tag-blue">Text</span></td><td>Unique cell site identifier</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>latitude / longitude</td><td><span class="tag tag-cyan">Decimal</span></td><td>WGS84 coordinate system</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>technology</td><td><span class="tag tag-blue">Text</span></td><td>2G / 3G / 4G / 5G</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>operator</td><td><span class="tag tag-blue">Text</span></td><td>Mobile network operator name</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>coverage_radius_km</td><td><span class="tag tag-cyan">Decimal</span></td><td>Estimated coverage radius</td><td><span class="tag tag-warn">⚠ 2 nulls</span></td></tr>
+                <tr><td>population_covered</td><td><span class="tag tag-cyan">Integer</span></td><td>Population within coverage area</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>installation_year</td><td><span class="tag tag-blue">Integer</span></td><td>Year of tower installation</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>tower_height_m</td><td><span class="tag tag-cyan">Decimal</span></td><td>Tower height in metres</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+                <tr><td>usf_eligible</td><td><span class="tag tag-blue">Boolean</span></td><td>USF intervention eligibility flag</td><td><span class="tag tag-success">✓ Valid</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="insight-box insight-warn">
+          <div class="ins-title ins-warn"><i class="ti ti-alert-triangle"></i> Validation alert — 2 missing values in coverage_radius_km</div>
+          <p>Use the dataset validation interface, confirm schema and field names, then reassign datasets to the correct country. Datasets not matching the scenario country or with incomplete model parameters will prevent calculations from running.</p>
+        </div>
+
+        <div class="section-label">4G coverage by district — visualised from dataset</div>
+        <div class="card">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Critical (&lt;30%)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#F5A623;"></span>Moderate (30–70%)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#1B76BC;"></span>Well served (&gt;70%)</span>
+          </div>
+          <div id="bar-chart-area"></div>
+        </div>
+
+        <div class="filter-row" id="coverage-filters">
+          <button class="filter-btn active" onclick="filterTable('all',this)">All districts</button>
+          <button class="filter-btn" onclick="filterTable('critical',this)">Critical (&lt;30%)</button>
+          <button class="filter-btn" onclick="filterTable('moderate',this)">Moderate (30–70%)</button>
+          <button class="filter-btn" onclick="filterTable('good',this)">Well served (&gt;70%)</button>
+          <button class="filter-btn" onclick="filterTable('usf',this)">USF eligible</button>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>District</th><th>Population</th><th>4G coverage</th><th>Fixed BB</th><th>Rurality</th><th>Income quintile</th><th>Operators</th><th>USF eligible</th><th>Status</th></tr></thead>
+            <tbody id="district-tbody"></tbody>
+          </table>
+        </div>
+        <div class="action-row">
+          <button class="btn-primary" onclick="showPanel('scenarios')">Next: Set up Scenario <i class="ti ti-arrow-right"></i></button>
+          <button class="btn-secondary" onclick="showPanel('intro')"><i class="ti ti-arrow-left"></i> Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIOS -->
+    <div class="panel" id="panel-scenarios">
+      <div class="section-label">Step 3 — Scenarios &amp; Project Setup</div>
+      <div class="card" style="border-left:4px solid var(--itu-blue);">
+        <div style="font-size:14px;font-weight:700;color:var(--itu-blue);margin-bottom:0.5rem;">Creating a New Project — 4 Steps</div>
+        <p style="font-size:13px;color:var(--text-mid);line-height:1.6;">In CPP, go to <strong>Projects → Add New</strong>. You may Save or Cancel at any step — once saved, the project appears as a <strong>Draft</strong> in the Project List.</p>
+      </div>
+      <div class="card-grid2" style="margin-bottom:1rem;">
+        <div class="card" style="border-top:3px solid #1B76BC;margin-bottom:0;"><div style="font-size:11px;font-weight:700;color:#1B76BC;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em;">Step 1 — Project Information</div><div style="font-size:13px;color:var(--text-mid);line-height:1.7;">Enter: <strong>Project Name</strong>, <strong>Country of Focus</strong> (ITU member states list), <strong>Project Description</strong></div></div>
+        <div class="card" style="border-top:3px solid #1660A0;margin-bottom:0;"><div style="font-size:11px;font-weight:700;color:#1660A0;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em;">Step 2 — Scenario &amp; Model</div><div style="font-size:13px;color:var(--text-mid);line-height:1.7;">Select: <strong>Maximize Net Present Value</strong> or <strong>Minimize Total Cost of Ownership</strong>. Enter parameter values for each scenario parameter.</div></div>
+        <div class="card" style="border-top:3px solid #0D5A94;margin-bottom:0;"><div style="font-size:11px;font-weight:700;color:#0D5A94;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em;">Step 3 — Model Parameters &amp; Datasets</div><div style="font-size:13px;color:var(--text-mid);line-height:1.7;">Select datasets (Cellular Towers, Transmission Nodes, POIs, Mobile Coverage). Ensure they match the <strong>country and model requirements</strong>.</div></div>
+        <div class="card" style="border-top:3px solid #094475;margin-bottom:0;"><div style="font-size:11px;font-weight:700;color:#094475;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em;">Step 4 — Run Calculations</div><div style="font-size:13px;color:var(--text-mid);line-height:1.7;">Click <strong>Start Calculation</strong>. Can take several minutes to hours. Monitor status in the Project List — shows as <strong>calculated</strong> when complete.</div></div>
+      </div>
+
+      <div class="section-label">Interactive: Scenario planning simulator</div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:6px;">Select planning scenario</div>
+            <div id="scenario-npv" onclick="selectScenario('npv')" style="padding:0.75rem;border:2px solid var(--itu-blue);border-radius:var(--radius-md);cursor:pointer;background:var(--itu-blue-light);margin-bottom:6px;">
+              <div style="font-size:13px;font-weight:700;color:var(--itu-blue);">Maximize Net Present Value</div>
+              <div style="font-size:12px;color:var(--text-mid);margin-top:3px;">Assign technologies that maximise the NPV of the project</div>
+            </div>
+            <div id="scenario-tco" onclick="selectScenario('tco')" style="padding:0.75rem;border:2px solid var(--border-mid);border-radius:var(--radius-md);cursor:pointer;">
+              <div style="font-size:13px;font-weight:700;color:var(--text-mid);">Minimize Total Cost of Ownership</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:3px;">Assign technologies that minimise the total cost of ownership</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:6px;">Scenario parameters</div>
+            <div style="background:var(--bg);border-radius:var(--radius-md);padding:0.75rem;">
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text-mid);">Maximum total expenditure (USD)</span><span style="font-size:13px;font-weight:700;color:var(--text);" id="budget-display">$500,000</span></div>
+              <div style="padding:8px 0;"><input type="range" min="100000" max="2000000" step="50000" value="500000" id="budget-slider" oninput="updateBudget()" style="width:100%;accent-color:var(--itu-blue);"></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text-mid);">Project planning period (Years)</span><span style="font-size:13px;font-weight:700;color:var(--text);">10</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;"><span style="font-size:12px;color:var(--text-mid);">Demand per user [Mbps]</span><span style="font-size:13px;font-weight:700;color:var(--text);">10</span></div>
+            </div>
+          </div>
+        </div>
+        <div id="scenario-result" class="insight-box insight-blue" style="margin-bottom:0;">
+          <div class="ins-title ins-blue"><i class="ti ti-chart-line"></i> Scenario: Maximize Net Present Value</div>
+          <p>With a budget of <strong id="budget-label">$500,000</strong> over 10 years at 10 Mbps per user, CPP will assign the technologies that maximise the net present value of the project across your selected models.</p>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('models')">Next: Select Models <i class="ti ti-arrow-right"></i></button>
+        <button class="btn-secondary" onclick="showPanel('datasets')"><i class="ti ti-arrow-left"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- MODELS -->
+    <div class="panel" id="panel-models">
+      <div class="section-label">Step 4 — Models</div>
+      <div class="card" style="border-left:4px solid var(--itu-blue);margin-bottom:1rem;"><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Models provide a structured setup for planning while simulating specific telecommunication technologies. In Step 2 of creating a project, click <strong>+ Add a model to your scenario</strong>. Enter parameter values for each selected model.</p></div>
+
+      <div class="section-label">Select models for your scenario</div>
+      <div id="model-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;"></div>
+      <div id="model-detail-area"></div>
+
+      <div class="section-label">Compare technology options</div>
+      <div class="card" style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Technology</th><th>Best use case</th><th>Coverage range</th><th>Cost level</th><th>Key parameter in CPP</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-blue">Point-to-Point Radio</span></td><td>Linking towers and transmission nodes, line-of-sight</td><td>10–50 km</td><td><span class="tag tag-success">Low</span></td><td>Access link bandwidth [MHz/link]</td></tr>
+            <tr><td><span class="tag tag-cyan">Cellular</span></td><td>Population coverage in peri-urban and rural areas</td><td>2–30 km</td><td><span class="tag tag-warn">Medium</span></td><td>Coverage radius, technology generation</td></tr>
+            <tr><td><span class="tag tag-blue">Satellite</span></td><td>Remote/isolated POIs where terrestrial is not feasible</td><td>Global</td><td><span class="tag tag-danger">High</span></td><td>Satellite capacity [Mbps/site]</td></tr>
+            <tr><td><span class="tag tag-success">Fibre Optic</span></td><td>High-capacity backbone and last-mile in dense areas</td><td>Unlimited</td><td><span class="tag tag-danger">Very high</span></td><td>ISP fees, hardware CapEx, deployment cost/km</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="insight-box insight-cyan">
+        <div class="ins-title ins-cyan"><i class="ti ti-info-circle"></i> Updated datasets are the key to accurate modelling</div>
+        <p>Ensure your datasets match the country and model requirements. Selecting the wrong country for a dataset, or leaving model parameters incomplete, will prevent CPP from running calculations.</p>
+      </div>
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('results')">Next: Explore Results in the Map <i class="ti ti-arrow-right"></i></button>
+        <button class="btn-secondary" onclick="showPanel('scenarios')"><i class="ti ti-arrow-left"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="panel" id="panel-results">
+      <div class="section-label">Step 5 — Exploring Results in the Map</div>
+      <div class="quote-block">
+        <span class="quote-mark">"</span>
+        <div class="quote-text">The output is where insights become actionable.</div>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <div style="font-size:14px;font-weight:700;color:var(--itu-blue);margin-bottom:0.5rem;"><i class="ti ti-map"></i> Accessing Results</div>
+        <p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Open your project after the calculation finishes. Go to <strong>Projects → All Projects</strong> → click <strong>View</strong> on a project with status <strong>calculated</strong>. Hover over towers, transmission nodes, and POIs to see feasibility, distances, linkages, and technology recommendations.</p>
+      </div>
+      <div class="card-grid4" style="margin-bottom:1rem;">
+        <div class="metric"><div class="metric-label">National 4G avg.</div><div class="metric-value">61%</div><div class="metric-sub">18 districts</div></div>
+        <div class="metric"><div class="metric-label">Fixed broadband avg.</div><div class="metric-value">34%</div><div class="metric-sub">16 districts with data</div></div>
+        <div class="metric"><div class="metric-label">Population unserved</div><div class="metric-value">2.1M</div><div class="metric-sub">39% of total</div></div>
+        <div class="metric"><div class="metric-label">USF-eligible districts</div><div class="metric-value">11/18</div><div class="metric-sub">61% of districts</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;">
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:0.5rem;" id="map-title">4G mobile coverage by district</div>
+          <div class="filter-row" id="map-filters" style="margin-bottom:0.5rem;">
+            <button class="filter-btn active" onclick="updateMap('4g',this)">4G coverage</button>
+            <button class="filter-btn" onclick="updateMap('broadband',this)">Fixed broadband</button>
+            <button class="filter-btn" onclick="updateMap('rurality',this)">Rurality</button>
+            <button class="filter-btn" onclick="updateMap('income',this)">Income quintile</button>
+          </div>
+          <label style="font-size:12px;cursor:pointer;color:var(--text-mid);font-weight:500;display:block;margin-bottom:0.5rem;">
+            <input type="checkbox" id="usf-overlay" onchange="toggleUSF()" style="accent-color:var(--itu-blue);margin-right:4px;"> Highlight USF-eligible districts
+          </label>
+          <div class="legend" id="map-legend"></div>
+          <div class="map-grid" id="map-grid"></div>
+          <div style="font-size:11px;color:var(--text-light);margin-top:0.5rem;">Click any district for details · Real CPP uses actual country boundaries via Mapbox</div>
+        </div>
+        <div>
+          <div class="card" style="min-height:180px;">
+            <div style="font-size:13px;font-weight:700;color:var(--itu-blue);margin-bottom:8px;" id="detail-title">Select a district</div>
+            <div id="detail-content" style="font-size:13px;color:var(--text-mid);">Click any district to see feasibility, distances, linkages, and technology recommendations — as shown in CPP's interactive map.</div>
+          </div>
+          <div class="card">
+            <div class="section-label">What the CPP map displays</div>
+            <div style="font-size:13px;color:var(--text-mid);line-height:2;">
+              <i class="ti ti-tower-broadcast" style="color:var(--itu-blue);"></i> Towers capable of connecting POIs<br>
+              <i class="ti ti-line" style="color:var(--success);"></i> Fibre routes linking institutions to nodes<br>
+              <i class="ti ti-activity" style="color:var(--itu-cyan);"></i> Model outputs for each technology<br>
+              <i class="ti ti-alert-triangle" style="color:var(--warn);"></i> Infrastructure gaps<br>
+              <i class="ti ti-arrows-split-2" style="color:var(--text-mid);"></i> Alternative connection pathways
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="action-row" style="margin-top:0.75rem;">
+        <button class="btn-primary" onclick="showPanel('policy')">Next: Planning &amp; Policy <i class="ti ti-arrow-right"></i></button>
+        <button class="btn-secondary" onclick="showPanel('models')"><i class="ti ti-arrow-left"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- POLICY -->
+    <div class="panel" id="panel-policy">
+      <div class="section-label">Step 6 — Use Insights for Planning &amp; Policy</div>
+      <div class="quote-block">
+        <span class="quote-mark">"</span>
+        <div class="quote-text">The CPP provides a deep and practical understanding of your country's connectivity landscape.</div>
+      </div>
+
+      <div class="section-label">The results can be used to</div>
+      <div class="card-grid2" style="margin-bottom:1rem;">
+        <div class="card" style="border-left:3px solid var(--itu-blue);margin-bottom:0;"><div style="font-size:13px;font-weight:700;color:var(--itu-blue);margin-bottom:6px;"><i class="ti ti-building-hospital"></i> Institutional Connectivity</div><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Identify which towers or transmission nodes can serve specific schools, hospitals, and clinics. Prioritise institutions by population served and feasibility.</p></div>
+        <div class="card" style="border-left:3px solid var(--itu-cyan);margin-bottom:0;"><div style="font-size:13px;font-weight:700;color:#0A7CA8;margin-bottom:6px;"><i class="ti ti-map-2"></i> Rural Expansion Planning</div><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Compare fibre, microwave, and cellular solutions for remote areas. Plan fibre expansion or cellular upgrades based on CPP cost modelling.</p></div>
+        <div class="card" style="border-left:3px solid var(--success);margin-bottom:0;"><div style="font-size:13px;font-weight:700;color:#1E7A5E;margin-bottom:6px;"><i class="ti ti-shield-check"></i> Redundancy and Resilience</div><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Explore satellite or microwave backup options for critical institutions. Design resilient networks that maintain connectivity under failure scenarios.</p></div>
+        <div class="card" style="border-left:3px solid var(--warn);margin-bottom:0;"><div style="font-size:13px;font-weight:700;color:#9A6200;margin-bottom:6px;"><i class="ti ti-chart-bar"></i> National Strategy Development</div><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Use CPP outputs to shape broadband plans, inform national broadband strategies, and guide investment and budgeting discussions with development partners.</p></div>
+      </div>
+
+      <div class="section-label">Interactive: USF prioritisation model</div>
+      <div class="card" style="margin-bottom:1rem;">
+        <p style="font-size:13px;color:var(--text-mid);margin-bottom:0.75rem;line-height:1.6;">Adjust the weights to reflect your country's policy priorities. This mirrors how CPP outputs inform USF scoring models. This ensures decisions are strategic, evidence-based, and impactful.</p>
+        <div class="slider-row"><label>Coverage gap severity</label><input type="range" min="0" max="100" value="40" id="w-coverage" oninput="updatePriority()"><span id="w-coverage-val">40%</span></div>
+        <div class="slider-row"><label>Population affected</label><input type="range" min="0" max="100" value="30" id="w-pop" oninput="updatePriority()"><span id="w-pop-val">30%</span></div>
+        <div class="slider-row"><label>Income vulnerability</label><input type="range" min="0" max="100" value="20" id="w-income" oninput="updatePriority()"><span id="w-income-val">20%</span></div>
+        <div class="slider-row"><label>Rurality factor</label><input type="range" min="0" max="100" value="10" id="w-rural" oninput="updatePriority()"><span id="w-rural-val">10%</span></div>
+        <div style="font-size:12px;color:var(--text-light);">Total weight: <span id="total-weight" style="font-weight:700;color:var(--itu-blue);">100%</span></div>
+      </div>
+      <div class="card-grid2" style="margin-bottom:0;">
+        <div class="card" style="margin-bottom:0;"><div class="section-label">Priority ranking</div><div id="priority-list"></div></div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="section-label">Allocation guidance</div>
+          <div class="metric" style="margin-bottom:8px;"><div class="metric-label">Recommended USF allocation (top 5)</div><div class="metric-value" id="usf-alloc">62%</div><div class="metric-sub">of total available fund</div></div>
+          <div class="metric" style="margin-bottom:8px;"><div class="metric-label">Estimated population reached</div><div class="metric-value">1.4M</div><div class="metric-sub">people gaining connectivity</div></div>
+          <div class="insight-box insight-blue" style="margin-bottom:0;margin-top:0.75rem;"><div class="ins-title ins-blue"><i class="ti ti-bulb"></i> Planner's note</div><p>Shifting weight toward "income vulnerability" raises lower-income districts in priority — reflecting the pro-poor targeting approach recommended in ITU-D universal service guidelines.</p></div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:1.25rem;">From CPP output to policy action</div>
+      <div class="card" style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>CPP map pattern</th><th>Policy interpretation</th><th>Recommended action</th></tr></thead>
+          <tbody>
+            <tr><td>Red cluster — no cellular coverage</td><td>Geography-driven market failure</td><td>USF subsidy + infrastructure sharing mandate</td></tr>
+            <tr><td>Low income + low coverage correlation</td><td>Market not serving poorest communities</td><td>Demand-side subsidies (device, data vouchers)</td></tr>
+            <tr><td>High 4G, low fixed broadband</td><td>Mobile infrastructure present, last-mile gap</td><td>Fixed wireless access (FWA) incentives</td></tr>
+            <tr><td>Single-operator districts</td><td>No competitive pressure on quality</td><td>Spectrum refarming or virtual MVNOs</td></tr>
+            <tr><td>POIs unconnected near fibre routes</td><td>Last-mile extension needed</td><td>Targeted fibre spur investment via CPP model</td></tr>
+            <tr><td>Satellite as only feasible option</td><td>Remote area — terrestrial not viable</td><td>Satellite subsidy programme or VSAT tender</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="action-row">
+        <button class="btn-primary" onclick="showPanel('quiz')">Check your learning <i class="ti ti-arrow-right"></i></button>
+        <button class="btn-secondary" onclick="showPanel('results')"><i class="ti ti-arrow-left"></i> Back</button>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="panel" id="panel-quiz">
+      <div class="section-label">Step 7 — Check Your Learning</div>
+      <div class="card" style="margin-bottom:1rem;"><p style="font-size:13px;color:var(--text-mid);line-height:1.6;">Five scenario-based questions drawn from real CPP workflows and the Navigator guide. Select the best answer — instant feedback and explanation after each response.</p></div>
+      <div id="quiz-container"></div>
+      <div class="action-row" style="margin-top:1rem;">
+        <button class="btn-secondary" onclick="resetQuiz()"><i class="ti ti-refresh"></i> Restart quiz</button>
+        <button class="btn-secondary" onclick="showPanel('policy')"><i class="ti ti-arrow-left"></i> Back</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SESSION_PASSWORD = 'cppwebinarmay';
+
+function checkPassword() {
+  if (document.getElementById('pw-input').value === SESSION_PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem('cpp_auth','1');
+    initApp();
+  } else {
+    document.getElementById('lock-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+function logout() {
+  sessionStorage.removeItem('cpp_auth');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('lock-error').style.display = 'none';
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
+if (sessionStorage.getItem('cpp_auth')==='1') {
+  document.getElementById('lock-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  setTimeout(initApp,50);
+}
+
+const districts = [
+  {name:"Northern Highlands",pop:245000,cov4g:12,bb:8,rural:0.92,income:1,ops:1,usf:true},
+  {name:"Eastern Plains",pop:312000,cov4g:18,bb:12,rural:0.85,income:1,ops:1,usf:true},
+  {name:"Coastal North",pop:198000,cov4g:72,bb:45,rural:0.35,income:3,ops:2,usf:false},
+  {name:"Central Basin",pop:520000,cov4g:88,bb:61,rural:0.18,income:4,ops:3,usf:false},
+  {name:"Southern Lowlands",pop:178000,cov4g:24,bb:null,rural:0.78,income:2,ops:1,usf:true},
+  {name:"River Delta",pop:290000,cov4g:65,bb:38,rural:0.42,income:3,ops:2,usf:false},
+  {name:"Mountain West",pop:142000,cov4g:8,bb:5,rural:0.96,income:1,ops:1,usf:true},
+  {name:"Urban Capital",pop:890000,cov4g:97,bb:82,rural:0.05,income:5,ops:4,usf:false},
+  {name:"Suburban East",pop:445000,cov4g:84,bb:67,rural:0.22,income:4,ops:3,usf:false},
+  {name:"Interior Plateau",pop:167000,cov4g:31,bb:14,rural:0.71,income:2,ops:1,usf:true},
+  {name:"Lake Region",pop:203000,cov4g:55,bb:29,rural:0.55,income:3,ops:2,usf:true},
+  {name:"Southern Border",pop:134000,cov4g:22,bb:null,rural:0.82,income:1,ops:1,usf:true},
+  {name:"Coastal South",pop:267000,cov4g:76,bb:52,rural:0.28,income:4,ops:3,usf:false},
+  {name:"Northern Valley",pop:189000,cov4g:44,bb:21,rural:0.63,income:2,ops:2,usf:true},
+  {name:"Western Savanna",pop:221000,cov4g:28,bb:11,rural:0.75,income:2,ops:1,usf:true},
+  {name:"Central East",pop:358000,cov4g:69,bb:41,rural:0.38,income:3,ops:2,usf:false},
+  {name:"Port District",pop:412000,cov4g:91,bb:74,rural:0.12,income:5,ops:3,usf:false},
+  {name:"Inland Marshes",pop:156000,cov4g:16,bb:7,rural:0.88,income:1,ops:1,usf:true}
+];
+
+function getColor(val,type) {
+  if(val===null) return '#B4B2A9';
+  if(type==='4g'||type==='broadband'){
+    if(val<30) return '#E24B4A'; if(val<50) return '#F5A623'; if(val<70) return '#29ABE2'; if(val<85) return '#1B76BC'; return '#0D5A94';
+  }
+  if(type==='rurality'){ if(val>0.8) return '#E24B4A'; if(val>0.6) return '#F5A623'; if(val>0.4) return '#29ABE2'; if(val>0.2) return '#1B76BC'; return '#0D5A94'; }
+  if(type==='income') return ['#E24B4A','#F5A623','#29ABE2','#1B76BC','#0D5A94'][val-1];
+  return '#B4B2A9';
+}
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.wf-box').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  const idx={intro:0,datasets:1,scenarios:2,models:3,results:4,policy:5,quiz:6}[id];
+  if(idx!==undefined) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+  const wi={datasets:0,scenarios:1,models:2,results:3}[id];
+  if(wi!==undefined) document.querySelectorAll('.wf-box')[wi].classList.add('active');
+  if(id==='results') renderMap();
+  if(id==='policy') renderPriority();
+  if(id==='models') renderModels();
+  if(id==='quiz') renderQuiz();
+}
+
+function simulateUpload() {
+  document.getElementById('upload-title').textContent='Validating dataset…';
+  document.getElementById('upload-desc').textContent='Checking schema, field names, and coordinate system';
+  document.getElementById('upload-icon').className='ti ti-loader-2';
+  setTimeout(()=>{
+    document.getElementById('upload-icon').className='ti ti-circle-check';
+    document.getElementById('upload-icon').style.color='var(--success)';
+    document.getElementById('upload-title').textContent='Dataset validated — Status: success';
+    document.getElementById('upload-desc').textContent='Benin_CellTowers_2024.csv · 18 records · cellsite type';
+    document.getElementById('upload-zone').classList.add('loaded');
+    document.getElementById('dataset-detail').style.display='block';
+    renderBarChart('all'); renderTable('all');
+  },900);
+}
+
+function filterTable(f,btn) {
+  document.querySelectorAll('#coverage-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderTable(f); renderBarChart(f);
+}
+
+function renderTable(f) {
+  let d=districts;
+  if(f==='critical') d=districts.filter(x=>x.cov4g<30);
+  else if(f==='moderate') d=districts.filter(x=>x.cov4g>=30&&x.cov4g<=70);
+  else if(f==='good') d=districts.filter(x=>x.cov4g>70);
+  else if(f==='usf') d=districts.filter(x=>x.usf);
+  document.getElementById('district-tbody').innerHTML=d.map(x=>{
+    const band=x.cov4g<30?'danger':x.cov4g<=70?'warn':'success';
+    const label=x.cov4g<30?'Critical':x.cov4g<=70?'Moderate':'Well served';
+    return `<tr><td style="font-weight:600;">${x.name}</td><td>${(x.pop/1000).toFixed(0)}k</td>
+    <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-wrap" style="width:60px;"><div class="progress-bar" style="width:${x.cov4g}%;background:${getColor(x.cov4g,'4g')};"></div></div><span style="font-size:12px;font-weight:600;">${x.cov4g}%</span></div></td>
+    <td>${x.bb!==null?x.bb+'%':'<span class="tag tag-gray">N/A</span>'}</td>
+    <td>${x.rural.toFixed(2)}</td><td style="text-align:center;">Q${x.income}</td>
+    <td style="text-align:center;">${x.ops}</td>
+    <td style="text-align:center;">${x.usf?'<span class="tag tag-success">Yes</span>':'<span class="tag tag-gray">No</span>'}</td>
+    <td><span class="tag tag-${band}">${label}</span></td></tr>`;
+  }).join('');
+}
+
+function renderBarChart(f) {
+  let d=districts;
+  if(f==='critical') d=districts.filter(x=>x.cov4g<30);
+  else if(f==='moderate') d=districts.filter(x=>x.cov4g>=30&&x.cov4g<=70);
+  else if(f==='good') d=districts.filter(x=>x.cov4g>70);
+  else if(f==='usf') d=districts.filter(x=>x.usf);
+  document.getElementById('bar-chart-area').innerHTML=[...d].sort((a,b)=>a.cov4g-b.cov4g).map(x=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="font-size:11px;min-width:130px;text-align:right;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;">${x.name}</div>
+      <div style="flex:1;"><div class="progress-wrap"><div class="progress-bar" style="width:${x.cov4g}%;background:${getColor(x.cov4g,'4g')};"></div></div></div>
+      <div style="font-size:11px;min-width:30px;font-weight:700;color:${getColor(x.cov4g,'4g')};">${x.cov4g}%</div>
+    </div>`).join('');
+}
+
+let activeScenario='npv';
+function selectScenario(type) {
+  activeScenario=type;
+  const npv=document.getElementById('scenario-npv');
+  const tco=document.getElementById('scenario-tco');
+  const res=document.getElementById('scenario-result');
+  if(type==='npv'){
+    npv.style.borderColor='var(--itu-blue)'; npv.style.background='var(--itu-blue-light)'; npv.querySelector('div').style.color='var(--itu-blue)';
+    tco.style.borderColor='var(--border-mid)'; tco.style.background=''; tco.querySelector('div').style.color='var(--text-mid)';
+    res.className='insight-box insight-blue';
+    res.innerHTML='<div class="ins-title ins-blue"><i class="ti ti-chart-line"></i> Scenario: Maximize Net Present Value</div><p>CPP will assign the technologies that maximise the net present value of the project across your selected models.</p>';
+  } else {
+    tco.style.borderColor='var(--itu-blue)'; tco.style.background='var(--itu-blue-light)'; tco.querySelector('div').style.color='var(--itu-blue)';
+    npv.style.borderColor='var(--border-mid)'; npv.style.background=''; npv.querySelector('div').style.color='var(--text-mid)';
+    res.className='insight-box insight-cyan';
+    res.innerHTML='<div class="ins-title ins-cyan"><i class="ti ti-coins"></i> Scenario: Minimize Total Cost of Ownership</div><p>CPP will assign the technologies that minimise the total cost of ownership over the planning period — well suited for USF subsidy design.</p>';
+  }
+}
+function updateBudget() {
+  const v=parseInt(document.getElementById('budget-slider').value);
+  const f='$'+v.toLocaleString();
+  document.getElementById('budget-display').textContent=f;
+  document.getElementById('budget-label')&&(document.getElementById('budget-label').textContent=f);
+}
+
+const models=[
+  {id:'p2p',name:'Point-to-Point Radio',icon:'ti-radio',color:'var(--itu-blue)',desc:'Links towers and transmission nodes. Best for line-of-sight distances of 10–50 km.',params:['Access link bandwidth [MHz/link]: 10','Access link maintenance cost [Fraction of HW CapEx]: 0.04','Annual ISP fees per 1 Mbps [USD/Mbps/year]: 24','Annual license fee per 1 MHz [USD/MHz/year]: 100','Link setup cost [USD/link]: 1,000','One-time license fee per 1 MHz [USD/MHz]: 500','Hardware refresh period [Years]: 5']},
+  {id:'cellular',name:'Cellular',icon:'ti-cell-signal-5',color:'var(--itu-cyan)',desc:'Coverage for peri-urban and rural populations. Supports 2G/3G/4G/5G modelling.',params:['Coverage radius [km]: 10','Technology generation: 4G','Annual OPEX [% of CapEx]: 15','Hardware refresh period [Years]: 7']},
+  {id:'satellite',name:'Satellite',icon:'ti-satellite',color:'#6C3ADE',desc:'For remote/isolated POIs where terrestrial is not technically or commercially feasible.',params:['Satellite capacity per site [Mbps]: 20','Monthly recurring cost [USD/site/month]: 250','Hardware cost [USD/site]: 3,000','Latency profile: High (GEO) or Low (LEO)']},
+  {id:'fibre',name:'Fibre Optic',icon:'ti-line',color:'var(--success)',desc:'High-capacity backbone and last-mile. Highest cost but best long-term performance.',params:['ISP fees per 1 Mbps [USD/Mbps/year]: 12','Fibre deployment cost [USD/km]: 15,000','Hardware CapEx [USD/node]: 5,000','Maintenance cost [% of CapEx/year]: 0.03']}
+];
+let selectedModels=new Set();
+function renderModels() {
+  document.getElementById('model-grid').innerHTML=models.map(m=>{
+    const s=selectedModels.has(m.id);
+    return `<div onclick="toggleModel('${m.id}')" style="padding:1rem;border:2px solid ${s?m.color:'var(--border)'};border-radius:var(--radius-md);cursor:pointer;background:${s?'var(--itu-blue-light)':'var(--bg-card)'};transition:all 0.15s;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <i class="ti ${m.icon}" style="font-size:18px;color:${m.color};"></i>
+        <span style="font-size:13px;font-weight:700;color:${s?m.color:'var(--text)'};">${m.name}</span>
+        ${s?'<span class="tag tag-success" style="margin-left:auto;">Selected</span>':''}
+      </div>
+      <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">${m.desc}</div>
+    </div>`;
+  }).join('');
+  const sel=models.filter(m=>selectedModels.has(m.id));
+  const area=document.getElementById('model-detail-area');
+  if(!sel.length){
+    area.innerHTML='<div class="insight-box insight-blue" style="margin-bottom:1rem;"><div class="ins-title ins-blue"><i class="ti ti-info-circle"></i> Click to select models above</div><p>You can select multiple models. CPP will calculate the optimal mix based on your scenario — Maximize NPV or Minimize TCO.</p></div>';
+    return;
+  }
+  area.innerHTML=`<div class="card" style="margin-bottom:1rem;"><div class="section-label">Selected model parameters</div>${sel.map(m=>`
+    <div style="margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:700;color:${m.color};margin-bottom:6px;"><i class="ti ${m.icon}"></i> ${m.name}</div>
+      ${m.params.map(p=>`<div style="font-size:12px;color:var(--text-mid);padding:3px 0;display:flex;justify-content:space-between;"><span>${p.split(':')[0]}</span><strong style="color:var(--text);">${(p.split(':')[1]||'').trim()}</strong></div>`).join('')}
+    </div>`).join('')}
+    <div class="insight-box insight-success" style="margin-bottom:0;"><div class="ins-title ins-success"><i class="ti ti-check"></i> Ready for Step 4: Run Calculations</div><p>${sel.length} model(s) selected. In CPP click <strong>Save step 2</strong> → <strong>Step 3: Model parameters and datasets</strong> → <strong>Step 4: Run calculations</strong>.</p></div>
+  </div>`;
+}
+function toggleModel(id) { selectedModels.has(id)?selectedModels.delete(id):selectedModels.add(id); renderModels(); }
+
+let currentMapType='4g', showUSF=false;
+function updateMap(type,btn) { document.querySelectorAll('#map-filters .filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentMapType=type; renderMap(); }
+function toggleUSF() { showUSF=document.getElementById('usf-overlay').checked; renderMap(); }
+function renderMap() {
+  const titles={'4g':'4G mobile coverage by district',broadband:'Fixed broadband coverage by district',rurality:'Rurality index by district',income:'Income quintile by district (1 = lowest)'};
+  document.getElementById('map-title').textContent=titles[currentMapType];
+  const legends={
+    '4g':'<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>&lt;30%</span><span class="legend-item"><span class="legend-dot" style="background:#F5A623;"></span>30–50%</span><span class="legend-item"><span class="legend-dot" style="background:#29ABE2;"></span>50–70%</span><span class="legend-item"><span class="legend-dot" style="background:#1B76BC;"></span>70–85%</span><span class="legend-item"><span class="legend-dot" style="background:#0D5A94;"></span>&gt;85%</span>',
+    broadband:'<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>&lt;30%</span><span class="legend-item"><span class="legend-dot" style="background:#F5A623;"></span>30–50%</span><span class="legend-item"><span class="legend-dot" style="background:#1B76BC;"></span>50–70%</span><span class="legend-item"><span class="legend-dot" style="background:#0D5A94;"></span>&gt;70%</span><span class="legend-item"><span class="legend-dot" style="background:#B4B2A9;"></span>No data</span>',
+    rurality:'<span class="legend-item"><span class="legend-dot" style="background:#0D5A94;"></span>Urban</span><span class="legend-item"><span class="legend-dot" style="background:#1B76BC;"></span>Peri-urban</span><span class="legend-item"><span class="legend-dot" style="background:#29ABE2;"></span>Mixed</span><span class="legend-item"><span class="legend-dot" style="background:#F5A623;"></span>Rural</span><span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Remote</span>',
+    income:'<span class="legend-item"><span class="legend-dot" style="background:#E24B4A;"></span>Q1</span><span class="legend-item"><span class="legend-dot" style="background:#F5A623;"></span>Q2</span><span class="legend-item"><span class="legend-dot" style="background:#29ABE2;"></span>Q3</span><span class="legend-item"><span class="legend-dot" style="background:#1B76BC;"></span>Q4</span><span class="legend-item"><span class="legend-dot" style="background:#0D5A94;"></span>Q5</span>'
+  };
+  document.getElementById('map-legend').innerHTML=legends[currentMapType];
+  const vals={'4g':d=>d.cov4g,broadband:d=>d.bb,rurality:d=>d.rural,income:d=>d.income};
+  document.getElementById('map-grid').innerHTML=districts.map((d,i)=>{
+    const raw=vals[currentMapType](d);
+    const cv=currentMapType==='rurality'?d.rural:currentMapType==='income'?d.income:raw;
+    const color=getColor(cv,currentMapType);
+    const border=showUSF&&d.usf?'border:2.5px solid #F5A623;':'';
+    return `<div class="map-cell" style="background:${color};${border}" onclick="showDistrictDetail(${i})" role="button" tabindex="0" aria-label="${d.name}">
+      <span class="cell-label">${d.name.split(' ').slice(0,2).join(' ')}</span>
+    </div>`;
+  }).join('');
+}
+function showDistrictDetail(i) {
+  const d=districts[i];
+  document.getElementById('detail-title').textContent=d.name;
+  document.getElementById('detail-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div class="metric" style="padding:0.6rem;"><div class="metric-label">4G coverage</div><div class="metric-value" style="font-size:17px;color:${getColor(d.cov4g,'4g')};">${d.cov4g}%</div></div>
+      <div class="metric" style="padding:0.6rem;"><div class="metric-label">Fixed broadband</div><div class="metric-value" style="font-size:17px;">${d.bb!==null?d.bb+'%':'—'}</div></div>
+    </div>
+    <table style="width:100%;font-size:12px;">
+      <tr><td style="color:var(--text-mid);padding:3px 0;">Population</td><td style="text-align:right;font-weight:700;">${(d.pop/1000).toFixed(0)}k</td></tr>
+      <tr><td style="color:var(--text-mid);padding:3px 0;">Rurality index</td><td style="text-align:right;font-weight:700;">${d.rural.toFixed(2)}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:3px 0;">Income quintile</td><td style="text-align:right;font-weight:700;">Q${d.income}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:3px 0;">Active operators</td><td style="text-align:right;font-weight:700;">${d.ops}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:3px 0;">USF eligible</td><td style="text-align:right;">${d.usf?'<span class="tag tag-success">Yes</span>':'<span class="tag tag-gray">No</span>'}</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-light);">${d.usf?'Qualifies for USF support. CPP can model optimal technology intervention.':'Does not currently qualify for USF support.'}</div>`;
+}
+
+function updatePriority() {
+  ['coverage','pop','income','rural'].forEach(k=>{ const v=document.getElementById('w-'+k).value; document.getElementById('w-'+k+'-val').textContent=v+'%'; });
+  const t=['coverage','pop','income','rural'].reduce((s,k)=>s+parseInt(document.getElementById('w-'+k).value),0);
+  document.getElementById('total-weight').textContent=t+'%';
+  renderPriority();
+}
+function renderPriority() {
+  const wc=parseInt(document.getElementById('w-coverage')?.value||40);
+  const wp=parseInt(document.getElementById('w-pop')?.value||30);
+  const wi=parseInt(document.getElementById('w-income')?.value||20);
+  const wr=parseInt(document.getElementById('w-rural')?.value||10);
+  const mp=Math.max(...districts.map(d=>d.pop));
+  const sc=districts.filter(d=>d.usf).map(d=>({...d,score:(wc*(100-d.cov4g)/100+wp*d.pop/mp+wi*(6-d.income)/5+wr*d.rural)/100})).sort((a,b)=>b.score-a.score);
+  const list=document.getElementById('priority-list'); if(!list) return;
+  list.innerHTML=sc.slice(0,8).map((d,i)=>`<div class="priority-item"><div class="priority-rank ${i<3?'r-high':i<6?'r-med':'r-low'}">${i+1}</div><div class="priority-info"><div class="p-name">${d.name}</div><div class="p-detail">${d.cov4g}% 4G · ${(d.pop/1000).toFixed(0)}k · Q${d.income}</div></div><div style="font-size:12px;font-weight:700;color:var(--itu-blue);">${(d.score*100).toFixed(0)}pts</div></div>`).join('');
+  const t5=sc.slice(0,5).reduce((s,d)=>s+d.score,0), all=sc.reduce((s,d)=>s+d.score,0);
+  const el=document.getElementById('usf-alloc'); if(el) el.textContent=(all>0?Math.round(t5/all*100):0)+'%';
+}
+
+const quizData=[
+  {q:"In CPP, what is the correct first step before creating a new project?",options:["Run calculations immediately","Create a dataset with the correct country, type, and validated file","Set up a scenario with Maximize NPV","Contact cppsupport@itu.int to request access"],correct:1,explain:"The CPP workflow is: Datasets → Scenarios → Models → Results. Datasets must be created and validated first — selecting the correct country and dataset type, uploading the completed template, and clicking Validate and Create."},
+  {q:"A planner selects 'Minimize Total Cost of Ownership' as the scenario. What does CPP do?",options:["Prioritise the fastest internet speeds regardless of cost","Assign technologies that minimise the total cost of ownership over the planning period","Only consider satellite options","Exclude fibre from the model"],correct:1,explain:"'Minimize Total Cost of Ownership' directs CPP to assign technologies that minimise TCO across the project planning period. It is distinct from 'Maximize NPV', which prioritises technologies delivering the highest net present value."},
+  {q:"After uploading a dataset, CPP shows: 'Datasets not matching the scenario country'. What should the planner do?",options:["Delete the project and start again","Reassign the dataset to the correct country using the dataset validation interface","Ignore the error and run calculations","Change the scenario country to match the wrong dataset"],correct:1,explain:"The CPP Navigator specifies: use the dataset validation interface, confirm schema and field names, and reassign datasets to the correct country. The scenario country and dataset country must match before calculations can proceed."},
+  {q:"The CPP interactive map shows unconnected POIs near an existing fibre route. What is the most appropriate CPP-based intervention?",options:["Switch to satellite for the whole region","Remove those POIs from the Points of Interest dataset","Model a targeted fibre spur extension in CPP to close the last-mile gap","Increase demand per user to 100 Mbps"],correct:2,explain:"The CPP Navigator identifies 'POIs unconnected near fibre routes' as a last-mile extension need. The correct action is to model a targeted fibre spur in CPP — the platform calculates cost and feasibility of connecting remaining POIs to the existing node."},
+  {q:"Which best describes how CPP outputs should inform national broadband strategy?",options:["Share raw CSV files directly with the minister without interpretation","Use the map to identify underserved communities, compare technology options, and guide investment discussions — ensuring decisions are strategic, evidence-based, and impactful","Only use CPP results to report to donors","Discard results if satellite is the only feasible option"],correct:1,explain:"The CPP Navigator states results can be used to identify underserved communities, prioritise institutions (schools, hospitals, clinics), compare technology options, plan fibre expansion or cellular upgrades, design resilient networks, inform national broadband strategies, and guide investment and budgeting discussions — ensuring decisions are strategic, evidence-based, and impactful."}
+];
+let quizAnswers={};
+function renderQuiz() {
+  const ans=Object.keys(quizAnswers).length, cor=Object.values(quizAnswers).filter(Boolean).length;
+  let html='';
+  if(ans===quizData.length) html=`<div class="card" style="text-align:center;padding:1.5rem;margin-bottom:1rem;background:${cor>=4?'var(--success-light)':'var(--warn-light)'};border-color:${cor>=4?'var(--success)':'var(--warn)'};">
+    <div style="font-size:36px;font-weight:700;color:${cor>=4?'var(--success)':'var(--warn)'};margin-bottom:8px;">${cor} / ${quizData.length}</div>
+    <div style="font-size:14px;color:var(--text);">${cor>=4?'Excellent work — strong understanding of the CPP Navigator workflow.':'Good effort. Review the Datasets and Scenarios sections to strengthen your understanding.'}</div>
+  </div>`;
+  html+=quizData.map((q,qi)=>{
+    const ia=quizAnswers[qi]!==undefined;
+    return `<div class="card" style="margin-bottom:1rem;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem;line-height:1.5;"><span style="color:var(--itu-blue);font-weight:700;">Q${qi+1}.</span> ${q.q}</div>
+      ${q.options.map((opt,oi)=>{
+        let cls='quiz-option'+(ia?' answered':'');
+        if(ia&&oi===q.correct) cls+=' correct';
+        else if(ia&&quizAnswers[qi]===false&&oi===quizChoices[qi]) cls+=' wrong';
+        return `<div class="${cls}" onclick="${ia?'':(`answerQuiz(${qi},${oi})`)}"><div class="quiz-letter">${String.fromCharCode(65+oi)}</div><div style="font-size:13px;">${opt}</div></div>`;
+      }).join('')}
+      ${ia?`<div class="insight-box ${quizAnswers[qi]?'insight-success':'insight-warn'}" style="margin-top:0.5rem;margin-bottom:0;"><div class="ins-title ${quizAnswers[qi]?'ins-success':'ins-warn'}">${quizAnswers[qi]?'✓ Correct':'✗ Not quite'}</div><p>${q.explain}</p></div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('quiz-container').innerHTML=html;
+}
+let quizChoices={};
+function answerQuiz(qi,oi) {
+  quizChoices[qi]=oi; quizAnswers[qi]=(oi===quizData[qi].correct); renderQuiz();
+}
+function resetQuiz() { quizAnswers={}; quizChoices={}; renderQuiz(); }
+
+function initApp() { renderMap(); renderPriority(); renderModels(); renderQuiz(); }
+</script>
+</body>
+</html>
